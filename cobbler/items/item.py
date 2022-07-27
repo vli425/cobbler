@@ -151,17 +151,7 @@ class Item:
             return self._uid == other.uid
         return False
 
-    def _resolve(self, property_name: str) -> Any:
-        """
-        Resolve the ``property_name`` value in the object tree. This function traverses the tree from the object to its
-        topmost parent and returns the first value that is not inherited. If the the tree does not contain a value the
-        settings are consulted.
-
-        :param property_name: The property name to resolve.
-        :raises AttributeError: In case one of the objects try to inherit from a parent that does not have
-                                ``property_name``.
-        :return: The resolved value.
-        """
+    def __common_resolve(self, property_name: str):
         settings_name = property_name
         if property_name.startswith("proxy_url_"):
             property_name = "proxy"
@@ -174,21 +164,64 @@ class Item:
                 f'{type(self)} "{self.name}" does not have property "{property_name}"'
             )
 
-        attribute_value = getattr(self, attribute)
+        return getattr(self, attribute), settings_name
+
+    def __resolve_get_parent_or_settings(self, property_name: str, settings_name: str):
         settings = self.api.settings()
+        if self.parent is not None and hasattr(self.parent, property_name):
+            return getattr(self.parent, property_name)
+        if hasattr(settings, settings_name):
+            return getattr(settings, settings_name)
+        if hasattr(settings, f"default_{settings_name}"):
+            return getattr(settings, f"default_{settings_name}")
+
+    def _resolve(self, property_name: str) -> Any:
+        """
+        Resolve the ``property_name`` value in the object tree. This function traverses the tree from the object to its
+        topmost parent and returns the first value that is not inherited. If the tree does not contain a value the
+        settings are consulted.
+
+        :param property_name: The property name to resolve.
+        :raises AttributeError: In case one of the objects try to inherit from a parent that does not have
+                                ``property_name``.
+        :return: The resolved value.
+        """
+        attribute_value, settings_name = self.__common_resolve(property_name)
 
         if attribute_value == enums.VALUE_INHERITED:
-            if self.parent is not None and hasattr(self.parent, property_name):
-                return getattr(self.parent, property_name)
-            if hasattr(settings, settings_name):
-                return getattr(settings, settings_name)
-            if hasattr(settings, f"default_{settings_name}"):
-                return getattr(settings, f"default_{settings_name}")
-            AttributeError(
+            possible_return = self.__resolve_get_parent_or_settings(
+                property_name, settings_name
+            )
+            if possible_return is not None:
+                return possible_return
+            raise AttributeError(
                 f'{type(self)} "{self.name}" inherits property "{property_name}", but neither its parent nor'
                 f"settings have it"
             )
 
+        return attribute_value
+
+    def _resolve_list(self, property_name: str) -> List[Any]:
+        """
+        See :meth:`~cobbler.items.item.Item._resolve`
+        """
+        attribute_value, settings_name = self.__common_resolve(property_name)
+
+        if attribute_value == enums.VALUE_INHERITED:
+            # If value is inherited resolve it properly
+            return self._resolve(property_name)
+
+        parent_value = self.__resolve_get_parent_or_settings(
+            property_name, settings_name
+        )
+        if parent_value is None:
+            # There is no setting or parent. Thus return the unchanged value.
+            return attribute_value
+
+        # Enrich list
+        for value in parent_value:
+            if value not in attribute_value:
+                attribute_value.append(value)
         return attribute_value
 
     def _resolve_enum(
@@ -197,15 +230,7 @@ class Item:
         """
         See :meth:`~cobbler.items.item.Item._resolve`
         """
-        settings_name = property_name
-        attribute = "_" + property_name
-
-        if not hasattr(self, attribute):
-            raise AttributeError(
-                f'{type(self)} "{self.name}" does not have property "{property_name}"'
-            )
-
-        attribute_value = getattr(self, attribute)
+        attribute_value, settings_name = self.__common_resolve(property_name)
         settings = self.api.settings()
 
         if (
@@ -218,7 +243,7 @@ class Item:
                 return enum_type.to_enum(getattr(settings, settings_name))
             if hasattr(settings, f"default_{settings_name}"):
                 return enum_type.to_enum(getattr(settings, f"default_{settings_name}"))
-            AttributeError(
+            raise AttributeError(
                 f'{type(self)} "{self.name}" inherits property "{property_name}", but neither its parent nor'
                 "settings have it"
             )
@@ -257,6 +282,61 @@ class Item:
         utils.dict_annihilate(merged_dict)
 
         return merged_dict
+
+    def _deduplicate_list(self, property_name: str, value: list) -> list:
+        """
+        Filter out values that are already present in the parent property.
+
+        :param property_name: The property name to deduplicated.
+        :param value: The value that should be deduplicated.
+        :return: The deduplicated list
+        """
+        settings = self.api.settings()
+
+        settings_name = property_name
+        if property_name.startswith("proxy_url_"):
+            property_name = "proxy"
+        if property_name == "owners":
+            settings_name = "default_ownership"
+
+        if self.parent is not None and hasattr(self.parent, property_name):
+            parent_value = getattr(self.parent, property_name)
+        elif hasattr(settings, settings_name):
+            parent_value = getattr(settings, settings_name)
+        elif hasattr(settings, f"default_{settings_name}"):
+            parent_value = getattr(settings, f"default_{settings_name}")
+        else:
+            parent_value = []
+
+        for item in parent_value:
+            if item in value:
+                value.remove(item)
+
+        return value
+
+    def _deduplicate_dict(self, property_name: str, value: dict) -> dict:
+        """
+        Filter out the key:value pair may come from parent and global settings.
+        Note: we do not know exactly which resolver does key:value belongs to, what we did is just deduplicate them.
+
+        :param property_name: The property name to deduplicated.
+        :param value: The value that should be deduplicated.
+        :returns: The deduplicated dictionary
+        """
+        settings = self.api.settings()
+
+        if self.parent is not None and hasattr(self.parent, property_name):
+            parent_value = getattr(self.parent, property_name)
+        elif hasattr(settings, property_name):
+            parent_value = getattr(settings, property_name)
+        else:
+            parent_value = {}
+
+        for key in parent_value:
+            if key in value and parent_value[key] == value[key]:
+                value.pop(key)
+
+        return value
 
     @property
     def uid(self) -> str:
@@ -360,7 +440,7 @@ class Item:
         :setter: The list of people which should be new owners. May lock you out if you are using the ownership
                  authorization module.
         """
-        return self._resolve("owners")
+        return self._resolve_list("owners")
 
     @owners.setter
     def owners(self, owners: Union[str, list]):
@@ -371,7 +451,11 @@ class Item:
         """
         if not isinstance(owners, (str, list)):
             raise TypeError("owners must be str or list!")
-        self._owners = input_converters.input_string_or_list(owners)
+        value = input_converters.input_string_or_list(owners)
+        if value == enums.VALUE_INHERITED:
+            self._owners = enums.VALUE_INHERITED
+            return
+        self._owners = self._deduplicate_list("owners", value)
 
     @InheritableDictProperty
     def kernel_options(self) -> dict:
@@ -394,11 +478,13 @@ class Item:
         :raises ValueError: In case the values set could not be parsed successfully.
         """
         try:
-            self._kernel_options = input_converters.input_string_or_dict(
-                options, allow_multiples=True
-            )
+            value = input_converters.input_string_or_dict(options, allow_multiples=True)
+            if value == enums.VALUE_INHERITED:
+                self._kernel_options = enums.VALUE_INHERITED
+                return
+            self._kernel_options = self._deduplicate_dict("kernel_options", value)
         except TypeError as error:
-            raise TypeError("invalid kernel options") from error
+            raise TypeError("invalid kernel value") from error
 
     @InheritableDictProperty
     def kernel_options_post(self) -> dict:
@@ -449,7 +535,10 @@ class Item:
         :raises ValueError: If splitting the value does not succeed.
         """
         value = input_converters.input_string_or_dict(options, allow_multiples=True)
-        self._autoinstall_meta = value
+        if value == enums.VALUE_INHERITED:
+            self._autoinstall_meta = enums.VALUE_INHERITED
+            return
+        self._autoinstall_meta = self._deduplicate_dict("autoinstall_meta", value)
 
     @InheritableProperty
     def mgmt_classes(self) -> list:
