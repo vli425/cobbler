@@ -8,7 +8,7 @@ Mod Python service functions for Cobbler's public interface (aka cool stuff that
 
 import json
 import time
-import urllib
+import urllib.parse
 import xmlrpc.client
 import yaml
 
