@@ -780,6 +780,7 @@ class TFTPGen:
             append_line = f"append initrd={metadata['initrd_path']}"
         else:
             append_line = "append "
+        # TODO if cloud-init then add nocloud-net to kernel options
         append_line = f"{append_line}{kernel_options}"
         if distro and distro.os_version.startswith("xenserver620"):
             append_line = f"{kernel_options}"
