@@ -2460,19 +2460,17 @@ class CobblerXMLRPCInterface:
         return self.autoinstall_mgr.is_autoinstall_in_use(ai)
 
     def generate_autoinstall(
-        self, profile=None, system=None, REMOTE_ADDR=None, REMOTE_MAC=None, **rest
+        self, profile=None, system=None, autoinstaller_type="", autoinstaller_file=""
     ):
         """
-        Generate the autoinstallation file and return it.
+        Generate the auto-installation file and return it.
 
         :param profile: The profile to generate the file for.
         :param system: The system to generate the file for.
-        :param REMOTE_ADDR: This is dropped in this method since it is not needed here.
-        :param REMOTE_MAC: This is dropped in this method since it is not needed here.
-        :param rest: This is dropped in this method since it is not needed here.
+        :param autoinstaller_type: TODO
+        :param autoinstaller_file: TODO
         :return: The str representation of the file.
         """
-        # ToDo: Remove unneed params: REMOTE_ADDR, REMOTE_MAC, rest
         self._log("generate_autoinstall")
         try:
             return self.autoinstall_mgr.generate_autoinstall(profile, system)
