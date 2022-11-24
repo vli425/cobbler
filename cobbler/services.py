@@ -526,7 +526,7 @@ def application(environ, start_response):
         ):
             print(f"content not found: {my_uri}")
             status = "404 NOT FOUND"
-    except xmlrpc.server.Fault as err:
+    except xmlrpc.client.Fault as err:
         status = "500 SERVER ERROR"
         content = err.faultString
 
