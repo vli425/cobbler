@@ -90,11 +90,7 @@ class CobblerSvc:
         :param rest: This parameter is unused.
         :return:
         """
-        self.__xmlrpc_setup()
-        data = self.remote.generate_autoinstall(
-            profile, system, REMOTE_ADDR, REMOTE_MAC
-        )
-        return f"{data}"
+        self.autoinstall(profile, system, REMOTE_ADDR, REMOTE_MAC, **rest)
 
     def ipxe(self, profile=None, image=None, system=None, mac=None, **rest):
         """
@@ -365,23 +361,7 @@ class CobblerSvc:
         :param rest: If you wish you can try to let Cobbler autodetect the system with the MAC address.
         :return: Returns the autoinstall/kickstart profile.
         """
-        self.__xmlrpc_setup()
-
-        name = "?"
-        if system is not None:
-            url = f"{self.server}/cblr/svc/op/ks/system/{name}"
-        elif profile is not None:
-            url = f"{self.server}/cblr/svc/op/ks/profile/{name}"
-        else:
-            name = self.autodetect(**rest)
-            if name.startswith("FAILED"):
-                return f"# autodetection {name}"
-            url = f"{self.server}/cblr/svc/op/ks/system/{name}"
-
-        try:
-            return self.dlmgr.urlread(url)
-        except Exception:
-            return f"# kickstart retrieval failed ({url})"
+        self.find_autoinstall(system, profile, **rest)
 
     def puppet(self, hostname=None, **rest) -> str:
         """
