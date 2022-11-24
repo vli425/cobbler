@@ -10,6 +10,8 @@ import json
 import time
 import urllib.parse
 import xmlrpc.client
+from typing import Optional
+
 import yaml
 
 from cobbler import download_manager
@@ -21,17 +23,14 @@ class CobblerSvc:
     passed as parameters into the function.
     """
 
-    def __init__(self, server=None, req=None):
+    def __init__(self, server=None):
         """
         Default constructor which sets up everything to be ready.
 
         :param server: The domain to run at.
-        :param req: This parameter is unused.
         """
-        # ToDo: Remove req attribute.
         self.server = server
-        self.remote = None
-        self.req = req
+        self.remote: Optional[xmlrpc.client.Server] = None
         self.dlmgr = download_manager.DownloadManager()
 
     def __xmlrpc_setup(self):
