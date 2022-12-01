@@ -92,7 +92,7 @@ class AppendLineBuilder:
         This generates the DNS configuration for the system to boot for the append line.
         :param exclude_dns: If this flag is set to True, the DNS configuration is skipped.
         """
-        if not exclude_dns or self.system_dns is not None:
+        if not exclude_dns and self.system_dns is not None:
             if self.dist.breed == "suse":
                 nameserver_key = "nameserver"
             elif self.dist.breed == "redhat":
@@ -194,7 +194,6 @@ class AppendLineBuilder:
         """
         Try to add static ip boot options to avoid DHCP (interface/ip/netmask/gw/dns)
         Check for overrides first and clear them from kernel_options
-        :return: The Tuple with the interface, IP, Netmask, Gateway and DNS information.
         """
         self._generate_static_ip_boot_interface()
         self._generate_static_ip_boot_ip()
@@ -431,7 +430,15 @@ class NetbootBuildiso(buildiso.BuildIso):
         """
         if selected_items is None:
             selected_items = []
-        return self.filter_items(self.api.systems(), selected_items)
+        found_systems = self.filter_items(self.api.systems(), selected_items)
+        # Now filter all systems out that are image based as we don't know about their kernel and initrds
+        return_systems = []
+        for system in found_systems:
+            # All systems not underneath a profile should be skipped
+            if system.get_conceptual_parent().TYPE_NAME == "profile":
+                return_systems.append(system)
+        # Now finally return
+        return return_systems
 
     def make_shorter(self, distname: str) -> str:
         """

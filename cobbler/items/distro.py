@@ -34,6 +34,8 @@ class Distro(item.Item):
     A Cobbler distribution object
     """
 
+    # Constants
+    TYPE_NAME = "distro"
     COLLECTION_TYPE = "distro"
 
     def __init__(self, api, *args, **kwargs):
@@ -162,7 +164,10 @@ class Distro(item.Item):
         if not isinstance(kernel, str):
             raise TypeError("kernel was not of type str")
         if not utils.find_kernel(kernel):
-            raise ValueError("kernel not found: %s" % kernel)
+            raise ValueError(
+                "kernel not found or it does not match with allowed kernel filename pattern [%s]: %s."
+                % (utils._re_kernel.pattern, kernel)
+            )
         self._kernel = kernel
 
     @property
