@@ -14,7 +14,7 @@ import time
 from typing import Optional, List
 
 from cobbler.cexceptions import CX
-from cobbler import templar
+from templates import templar
 from cobbler import tftpgen
 from cobbler import utils
 from cobbler.utils import filesystem_helpers

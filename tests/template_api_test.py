@@ -1,6 +1,6 @@
 import pytest
 
-from cobbler.template_api import CobblerTemplate
+from templates.template_api import CobblerTemplate
 
 
 class TestCobblerTemplate:

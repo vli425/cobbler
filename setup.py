@@ -549,6 +549,7 @@ if __name__ == "__main__":
             "file-magic",
             "schema",
             "gunicorn",
+            "importlib-resources",
         ],
         extras_require={
             "lint": ["pyflakes", "pycodestyle", "pylint", "black", "mypy"],

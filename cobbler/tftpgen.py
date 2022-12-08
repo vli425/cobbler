@@ -15,7 +15,8 @@ import re
 import socket
 from typing import Dict, List, Optional
 
-from cobbler import enums, templar, utils
+from cobbler import enums, utils
+from templates import templar
 from cobbler.cexceptions import CX
 from cobbler.enums import Archs, ImageTypes
 from cobbler.utils import input_converters

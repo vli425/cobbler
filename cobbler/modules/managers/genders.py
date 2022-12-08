@@ -8,7 +8,7 @@ import logging
 import sys
 import os
 import time
-from cobbler.templar import Templar
+from templates.templar import Templar
 
 plib = distutils.sysconfig.get_python_lib()
 mod_path = f"{plib}/cobbler"

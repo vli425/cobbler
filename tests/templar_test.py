@@ -1,7 +1,7 @@
 import pytest
 
 from cobbler.cexceptions import CX
-from cobbler.templar import Templar
+from templates.templar import Templar
 
 
 @pytest.fixture(scope="function")

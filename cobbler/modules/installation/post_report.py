@@ -9,7 +9,7 @@ Post install trigger for Cobbler to send out a pretty email report that contains
 from builtins import str
 import smtplib
 from cobbler.cexceptions import CX
-from cobbler import templar
+from templates import templar
 from cobbler import utils
 
 

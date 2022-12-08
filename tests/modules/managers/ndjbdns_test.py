@@ -1,6 +1,6 @@
 from cobbler.modules.managers import ndjbdns
 from cobbler.items.system import NetworkInterface, System
-from cobbler.templar import Templar
+from templates.templar import Templar
 
 
 def test_register():

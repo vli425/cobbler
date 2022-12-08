@@ -9,7 +9,7 @@ This is the code behind 'cobbler sync'.
 
 import pathlib
 
-from cobbler import templar
+from templates import templar
 from cobbler import utils
 
 

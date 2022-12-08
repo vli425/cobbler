@@ -9,7 +9,7 @@ import os.path
 import shutil
 from typing import List
 
-from cobbler import templar
+from templates import templar
 from cobbler import utils
 from cobbler import tftpgen
 

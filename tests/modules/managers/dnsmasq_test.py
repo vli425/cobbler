@@ -5,7 +5,7 @@ from cobbler.modules.managers import dnsmasq
 from cobbler.items.system import NetworkInterface, System
 from cobbler.items.distro import Distro
 from cobbler.items.profile import Profile
-from cobbler.templar import Templar
+from templates.templar import Templar
 
 
 def test_register():

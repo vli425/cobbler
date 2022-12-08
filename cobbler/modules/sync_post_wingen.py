@@ -10,7 +10,7 @@ import tempfile
 from typing import Optional
 
 from cobbler import utils
-from cobbler import templar
+from templates import templar
 from cobbler import tftpgen
 from cobbler.utils import filesystem_helpers
 

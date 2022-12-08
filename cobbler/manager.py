@@ -7,7 +7,7 @@ Base class for modules.managers.* classes
 # SPDX-FileCopyrightText: Thomas Renninger <trenn@suse.de>
 
 import logging
-from cobbler import templar
+from templates import templar
 
 
 class ManagerModule:
