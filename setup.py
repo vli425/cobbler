@@ -552,7 +552,14 @@ if __name__ == "__main__":
             "importlib-resources",
         ],
         extras_require={
-            "lint": ["pyflakes", "pycodestyle", "pylint", "black", "mypy"],
+            "lint": [
+                "pyflakes",
+                "pycodestyle",
+                "pylint",
+                "black",
+                "mypy",
+                "pre-commit",
+            ],
             "test": ["pytest>6", "pytest-cov", "codecov", "pytest-mock"],
             "docs": ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-apidoc"],
         },
