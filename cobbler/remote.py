@@ -18,18 +18,13 @@ import time
 import re
 import xmlrpc.server
 from socketserver import ThreadingMixIn
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, TYPE_CHECKING
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 
 from cobbler import enums
-from cobbler import autoinstall_manager
-from cobbler import configgen
-from cobbler.items import (
-    item,
-    system,
-)
-from cobbler import tftpgen
+from cobbler.items import item
 from cobbler import utils
+from cobbler.items.system import NetworkInterface
 from cobbler.utils import signatures
 from cobbler.utils.event import CobblerEvent
 from cobbler.utils.thread import CobblerThread
@@ -68,8 +63,6 @@ class CobblerXMLRPCInterface:
         self.events: Dict[str, CobblerEvent] = {}
         self.shared_secret = utils.get_shared_secret()
         random.seed(time.time())
-        self.tftpgen = tftpgen.TFTPGen(api)
-        self.autoinstall_mgr = autoinstall_manager.AutoInstallationManager(api)
 
     def check(self, token: str) -> list:
         """
@@ -691,7 +684,7 @@ class CobblerXMLRPCInterface:
                 attribute == "interfaces"
                 and len(return_value) > 0
                 and all(
-                    isinstance(value, system.NetworkInterface)
+                    isinstance(value, NetworkInterface)
                     for value in return_value.values()
                 )
             ):
@@ -2084,7 +2077,7 @@ class CobblerXMLRPCInterface:
         if field_name in ("delete_interface", "rename_interface"):
             return True
 
-        interface = system.NetworkInterface(self.api)
+        interface = NetworkInterface(self.api)
         fields = []
         for attribute in interface.__dict__:
             if attribute.startswith("_") and (
@@ -2270,7 +2263,7 @@ class CobblerXMLRPCInterface:
             interface = system_to_edit.interfaces.get(interface_name)
             if interface is None:
                 # If the interface is not existing, create a new one.
-                interface = system.NetworkInterface(self.api)
+                interface = NetworkInterface(self.api)
             for attribute_key in attributes:
                 if self.__is_interface_field(attribute_key):
                     if hasattr(interface, attribute_key):
@@ -2428,19 +2421,18 @@ class CobblerXMLRPCInterface:
 
     def get_autoinstall_templates(self, token=None, **rest):
         """
-        Returns all of the automatic OS installation templates that are in use by the system.
+        Returns all automatic OS installation templates that are in use by the system.
 
         :param token: The API-token obtained via the login() method.
         :param rest: This is dropped in this method since it is not needed here.
         :return: A list with all templates.
         """
         self._log("get_autoinstall_templates", token=token)
-        # self.check_access(token, "get_autoinstall_templates")
-        return self.autoinstall_mgr.get_autoinstall_templates()
+        return self.api.get_autoinstall_templates()
 
     def get_autoinstall_snippets(self, token=None, **rest):
         """
-        Returns all the automatic OS installation templates' snippets.
+        Returns all automatic OS installation templates' snippets.
 
         :param token: The API-token obtained via the login() method.
         :param rest: This is dropped in this method since it is not needed here.
@@ -2448,11 +2440,11 @@ class CobblerXMLRPCInterface:
         """
 
         self._log("get_autoinstall_snippets", token=token)
-        return self.autoinstall_mgr.get_autoinstall_snippets()
+        return self.api.get_autoinstall_snippets()
 
     def is_autoinstall_in_use(self, ai, token=None, **rest):
         """
-        Check if the autoinstall for a system is in use.
+        Check if the auto-installation for a system is in use.
 
         :param ai: The name of the system which could potentially be in autoinstall mode.
         :param token: The API-token obtained via the login() method.
@@ -2460,7 +2452,7 @@ class CobblerXMLRPCInterface:
         :return: True if this is the case, otherwise False.
         """
         self._log("is_autoinstall_in_use", token=token)
-        return self.autoinstall_mgr.is_autoinstall_in_use(ai)
+        return self.api.is_autoinstall_in_use(ai)
 
     def generate_autoinstall(
         self, profile=None, system=None, autoinstaller_type="", autoinstaller_file=""
@@ -2468,21 +2460,19 @@ class CobblerXMLRPCInterface:
         """
         Generate the auto-installation file and return it.
 
-        :param profile: The profile to generate the file for.
-        :param system: The system to generate the file for.
+        :param profile: The profile name to generate the file for.
+        :param system: The system name to generate the file for.
         :param autoinstaller_type: TODO
         :param autoinstaller_file: TODO
         :return: The str representation of the file.
         """
         self._log("generate_autoinstall")
-        try:
-            return self.autoinstall_mgr.generate_autoinstall(profile, system)
-        except Exception:
-            utils.log_exc()
-            return (
-                "# This automatic OS installation file had errors that prevented it from being rendered "
-                "correctly.\n# The cobbler.log should have information relating to this failure."
-            )
+        return self.api.generate_autoinstall(
+            profile=profile,
+            system=system,
+            autoinstaller_type=autoinstaller_type,
+            autoinstaller_file=autoinstaller_file,
+        )
 
     def generate_profile_autoinstall(self, profile):
         """
@@ -2491,7 +2481,7 @@ class CobblerXMLRPCInterface:
         :param profile: The profile to generate the file for.
         :return: The str representation of the file.
         """
-        return self.generate_autoinstall(profile=profile)
+        return self.api.generate_profile_autoinstall(profile_name=profile)
 
     def generate_system_autoinstall(self, system):
         """
@@ -2500,7 +2490,7 @@ class CobblerXMLRPCInterface:
         :param system: The system to generate the file for.
         :return: The str representation of the file.
         """
-        return self.generate_autoinstall(system=system)
+        return self.api.generate_system_autoinstall(system_name=system)
 
     def generate_ipxe(self, profile=None, image=None, system=None, **rest) -> str:
         """
@@ -2729,7 +2719,7 @@ class CobblerXMLRPCInterface:
             return utils.get_supported_system_boot_loaders()
         obj = self.api.find_system(system_name)
         if obj is None:
-            return f"# object not found: {system_name}"
+            return [f"# object not found: {system_name}"]
         parent = obj.get_conceptual_parent()
 
         if parent and parent.COLLECTION_TYPE == "profile":
@@ -3363,11 +3353,11 @@ class CobblerXMLRPCInterface:
 
             if obj.is_management_supported():
                 if not image_based:
-                    _dict["pxelinux.cfg"] = self.tftpgen.write_pxe_file(
+                    _dict["pxelinux.cfg"] = self.api.generate_pxe_file(
                         None, obj, profile, distro, arch
                     )
                 else:
-                    _dict["pxelinux.cfg"] = self.tftpgen.write_pxe_file(
+                    _dict["pxelinux.cfg"] = self.api.generate_pxe_file(
                         None, obj, None, None, arch, image=profile
                     )
 
@@ -3771,7 +3761,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        return self.autoinstall_mgr.read_autoinstall_template(file_path)
+        return self.api.read_autoinstall_template(file_path)
 
     def write_autoinstall_template(self, file_path: str, data: str, token: str):
         """
@@ -3787,7 +3777,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        self.autoinstall_mgr.write_autoinstall_template(file_path, data)
+        self.api.write_autoinstall_template(file_path, data)
 
         return True
 
@@ -3803,7 +3793,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        self.autoinstall_mgr.remove_autoinstall_template(file_path)
+        self.api.remove_autoinstall_template(file_path)
 
         return True
 
@@ -3819,7 +3809,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        return self.autoinstall_mgr.read_autoinstall_snippet(file_path)
+        return self.api.read_autoinstall_snippet(file_path)
 
     def write_autoinstall_snippet(self, file_path: str, data: str, token: str) -> bool:
         """
@@ -3835,7 +3825,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        self.autoinstall_mgr.write_autoinstall_snippet(file_path, data)
+        self.api.write_autoinstall_snippet(file_path, data)
 
         return True
 
@@ -3852,7 +3842,7 @@ class CobblerXMLRPCInterface:
         self._log(what, name=file_path, token=token)
         self.check_access(token, what, file_path, True)
 
-        self.autoinstall_mgr.remove_autoinstall_snippet(file_path)
+        self.api.remove_autoinstall_snippet(file_path)
 
         return True
 
@@ -3864,8 +3854,7 @@ class CobblerXMLRPCInterface:
         :return: The config data as a json for Koan.
         """
         self._log(f"get_config_data for {hostname}")
-        obj = configgen.ConfigGen(self.api, hostname)
-        return obj.gen_config_data_for_koan()
+        return self.api.get_config_data(hostname)
 
     def clear_system_logs(self, object_id: str, token: str):
         """
