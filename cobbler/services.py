@@ -34,7 +34,7 @@ class AutoinstallerTypes(enum.Enum):
     PRESEED = "preseed"
     KICKSTART = "kickstart"
     AUTOYAST = "autoyast"
-    CLODUINIT = "cloud-init"
+    CLOUDINIT = "cloud-init"
     # IGNITION = "ignition"
     # COMBUSTION = "combustion"
     # WINDOWS = "windows"
@@ -117,9 +117,9 @@ class CobblerSvc:
         elif AutoinstallerTypes.KICKSTART.value in kwargs:
             requested_file = kwargs.get(AutoinstallerTypes.KICKSTART.value)
             autoinstaller = AutoinstallerTypes.KICKSTART
-        elif AutoinstallerTypes.CLODUINIT.value in kwargs:
-            requested_file = kwargs.get(AutoinstallerTypes.CLODUINIT.value)
-            autoinstaller = AutoinstallerTypes.CLODUINIT
+        elif AutoinstallerTypes.CLOUDINIT.value in kwargs:
+            requested_file = kwargs.get(AutoinstallerTypes.CLOUDINIT.value)
+            autoinstaller = AutoinstallerTypes.CLOUDINIT
 
         return autoinstaller, requested_file
 
@@ -150,8 +150,11 @@ class CobblerSvc:
         Generate automatic installation files. This is a legacy function for part backward compatibility to 2.6.6
         releases.
 
-        :param profile:
-        :param system:
+        .. deprecated:: 3.4.0
+           The auto-installation endpoint should be used. This will be removed with 4.0.0!
+
+        :param profile: The profile name to use for auto-installing the system.
+        :param system: The system name (if already present in Cobbler) to use for auto-installing the system.
         :param rest: This parameter is unused.
         :return:
         """
