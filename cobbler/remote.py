@@ -40,6 +40,9 @@ from cobbler.validate import (
     validate_uuid,
 )
 
+if TYPE_CHECKING:
+    from cobbler.api import CobblerAPI
+
 EVENT_TIMEOUT = 7 * 24 * 60 * 60  # 1 week
 CACHE_TIMEOUT = 10 * 60  # 10 minutes
 
@@ -51,7 +54,7 @@ class CobblerXMLRPCInterface:
     Most read-write operations require a token returned from "login". Read operations do not.
     """
 
-    def __init__(self, api):
+    def __init__(self, api: "CobblerAPI"):
         """
         Constructor. Requires a Cobbler API handle.
 
