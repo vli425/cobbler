@@ -1,6 +1,7 @@
 """
 Template functionality that is tied to Jinja2.
 """
+
 from cobbler.templates import BaseTemplateProvider
 
 try:
@@ -14,10 +15,12 @@ except ModuleNotFoundError:
 
 class JinjaTemplateProvider(BaseTemplateProvider):
     """
-    TODO
+    Provides support for the Jinja2 template language to Cobbler.
+
+    See: https://jinja.palletsprojects.com/en/3.1.x/
     """
 
-    template_language = "Jinja"
+    template_language = "jinja"
 
     @property
     def template_type_available(self) -> bool:

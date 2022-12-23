@@ -19,11 +19,11 @@ from cobbler import utils
 from cobbler.templates import BaseTemplateProvider
 
 try:
-    from Cheetah.Template import Template
+    from Cheetah.Template import Template as CheetahTemplate
 
     CHEETAH_AVAILABLE = True
 except ModuleNotFoundError:
-    Template = None  # pylint: disable=invalid-name
+    CheetahTemplate = None  # pylint: disable=invalid-name
     CHEETAH_AVAILABLE = False
 
 logger = logging.getLogger()
@@ -54,14 +54,14 @@ def generate_cheetah_macros():
     """
     try:
         macro_file = read_macro_file()
-        return Template.compile(
+        return CheetahTemplate.compile(
             source=macro_file,
             moduleName="cobbler.template_api",
             className="CheetahMacros",
         )
     except FileNotFoundError:
         logger.warning("Cheetah Macros file note found. Using empty template.")
-        return Template.compile(source="")
+        return CheetahTemplate.compile(source="")
 
 
 class CobblerCheetahTemplate(generate_cheetah_macros()):
@@ -90,7 +90,7 @@ class CobblerCheetahTemplate(generate_cheetah_macros()):
         # This follows all of the rules of snippets and advanced snippets. First it searches for a per-system snippet,
         # then a per-profile snippet, then a general snippet. If none is found, a comment explaining the error is
         # substituted.
-        self.BuiltinTemplate = Template.compile(
+        self.BuiltinTemplate = CheetahTemplate.compile(
             source="\n".join(
                 [
                     "#def SNIPPET($file)",
@@ -254,10 +254,12 @@ class CobblerCheetahTemplate(generate_cheetah_macros()):
 
 class CheetahTemplateProvider(BaseTemplateProvider):
     """
-    TODO
+    Provides support for the Cheetah template language to Cobbler.
+
+    See: https://cheetahtemplate.org/
     """
 
-    template_language = "Cheetah"
+    template_language = "cheetah"
 
     @property
     def template_type_available(self) -> bool:
@@ -332,7 +334,6 @@ class CheetahTemplateProvider(BaseTemplateProvider):
         try:
             generated_template_class = template(searchList=[search_table])
             data_out = str(generated_template_class)
-            # FIXME: last_errors to Templar management class
             self.last_errors = generated_template_class.errorCatcher().listErrors()
             if self.last_errors:
                 self.logger.warning("errors were encountered rendering the template")

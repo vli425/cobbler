@@ -4,6 +4,8 @@ Package that contains built-in templates and rendering logic from Cheetah and Ji
 Cobbler uses Cheetah templates for lots of stuff, but there's some additional magic around that to deal with
 snippets/etc. (And it's not spelled wrong!)
 """
+import importlib
+import inspect
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: Copyright 2006-2009, Red Hat, Inc and Others
@@ -12,9 +14,14 @@ snippets/etc. (And it's not spelled wrong!)
 import logging
 import os
 import os.path
+import pathlib
+import pkgutil
 import re
-from typing import Optional, Union, TextIO, List, Dict, TYPE_CHECKING
+from typing import Optional, Union, TextIO, List, Dict, TYPE_CHECKING, Any, Tuple
 
+import importlib_resources
+
+from cobbler.items.template import Template
 from cobbler.utils import filesystem_helpers
 
 if TYPE_CHECKING:
@@ -28,10 +35,10 @@ class BaseTemplateProvider:
 
     template_language = "generic"
     """
-    Identifier for the template type. 
+    Identifier for the template type. Must be identical to the module name.
     """
 
-    def __init__(self, api: CobblerAPI):
+    def __init__(self, api: "CobblerAPI"):
         """
         TODO
 
@@ -39,6 +46,8 @@ class BaseTemplateProvider:
         """
         self.api = api
         self.logger = logging.getLogger()
+        # First attempt to stay backwards compatible for the auto-installation validation
+        self.last_errors = []
 
     @property
     def template_type_available(self) -> bool:
@@ -50,6 +59,28 @@ class BaseTemplateProvider:
         raise NotImplementedError(
             '"template_type_available" must be implemented to be a valid template provider!'
         )
+
+    @property
+    def built_in_templates(self) -> List[Template]:
+        """
+        Collects the list of built-in read only templates.
+
+        :return: The list of templates that are built-in.
+        """
+        result: List[Template] = []
+        for template_candidate in importlib_resources.files(
+            f"cobbler.templates.{self.template_language}.data"
+        ).iterdir():
+            if template_candidate.is_file() and str(template_candidate).endswith(
+                ".template"
+            ):
+                built_in_template = Template(self.api)
+                built_in_template._template_uri = str(template_candidate)
+                built_in_template._template_type = self.template_language
+                built_in_template._built_in = True
+                result.append(built_in_template)
+
+        return result
 
     def render(self, raw_data: str, search_table: dict) -> str:
         """
@@ -69,21 +100,35 @@ class Templar:
     Wrapper to encapsulate all logic of the template providers.
     """
 
-    def __init__(self, api: CobblerAPI):
+    def __init__(self, api: "CobblerAPI"):
         """
         Constructor
 
         :param api: The main API instance which is used by the current running server.
         """
         self.api = api
-        self.last_errors = []
+        self.last_errors: List[Dict[str, Any]] = []
         self.logger = logging.getLogger()
         self.__loaded_template_providers: Dict[str, BaseTemplateProvider] = {}
 
-    def __load_template_providers(self):
-        pass
+    def load_template_providers(self):
+        template_providers = pathlib.Path(__file__).parent
+        for package in pkgutil.iter_modules([str(template_providers)]):
+            template_provider = importlib.import_module(
+                f"cobbler.templates.{package.name}"
+            )
+            for element in inspect.getmembers(template_provider):
+                if (
+                    inspect.isclass(element[1])
+                    and issubclass(element[1], BaseTemplateProvider)
+                    and element[1] is not BaseTemplateProvider
+                ):
+                    # Instantiate an object of the template provider and save it to our dict
+                    self.__loaded_template_providers[element[0]] = element[1](self.api)
 
-    def __detect_template_type(self, template_type: str, lines: List[str]) -> str:
+    def __detect_template_type(
+        self, template_type: str, lines: List[str]
+    ) -> Tuple[str, str]:
         if template_type is None:
             raise ValueError('"template_type" can\'t be "None"!')
 
@@ -91,7 +136,7 @@ class Templar:
             raise TypeError('"template_type" must be of type "str"!')
 
         if template_type not in ("default", "jinja2", "cheetah"):
-            return "# ERROR: Unsupported template type selected!"
+            return "# ERROR: Unsupported template type selected!", ""
 
         if template_type == "default":
             if self.api.settings().default_template_type:
@@ -104,9 +149,9 @@ class Templar:
             # language
             template_type = lines[0].split("=")[1].strip().lower()
             del lines[0]
-            raw_data = "\n".join(lines)
 
-        return template_type
+        raw_data = "\n".join(lines)
+        return template_type, raw_data
 
     @staticmethod
     def __save_template_to_disk(out_path: str, data_out: str):
@@ -162,13 +207,14 @@ class Templar:
             raw_data = data_input.read()
         else:
             raw_data = data_input
+
         lines = raw_data.split("\n")
-
-        # TODO: Remove first line of the template if the template type is in the file header
-        template_type = self.__detect_template_type(template_type, lines)
-
+        template_type, raw_data = self.__detect_template_type(template_type, lines)
         template_provider = self.__loaded_template_providers[template_type]
         data_out = template_provider.render(raw_data, search_table)
+        if len(template_provider.last_errors) > 0:
+            self.last_errors = template_provider.last_errors
+            template_provider.last_errors = []
 
         self.__enrich_http_server_to_search_table(search_table)
         data_out = self.__replace_at_variables(data_out, search_table)

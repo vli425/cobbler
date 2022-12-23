@@ -9,7 +9,7 @@ Builds out filesystem trees/data based on the object tree. This is the code behi
 import urllib.parse
 import xml.dom.minidom
 
-from templates import templar
+from cobbler import templates
 from cobbler import utils
 from cobbler import validate
 from cobbler.cexceptions import CX
@@ -29,7 +29,7 @@ class AutoInstallationGen:
         """
         self.api = api
         self.settings = api.settings()
-        self.templar = templar.Templar(self.api)
+        self.templar = templates.Templar(self.api)
 
     def createAutoYaSTScript(self, document, script, name):
         """

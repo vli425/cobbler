@@ -9,7 +9,7 @@ Post install trigger for Cobbler to send out a pretty email report that contains
 from builtins import str
 import smtplib
 from cobbler.cexceptions import CX
-from templates import templar
+from cobbler import templates
 from cobbler import utils
 
 
@@ -93,7 +93,7 @@ def run(api, args) -> int:
     ) as input_template:
         input_data = input_template.read()
 
-        message = templar.Templar(api).render(input_data, metadata, None)
+        message = templates.Templar(api).render(input_data, metadata, None)
 
         sendmail = True
         for prefix in settings.build_reporting_ignorelist:

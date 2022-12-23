@@ -9,7 +9,7 @@ import os.path
 import shutil
 from typing import List
 
-from templates import templar
+from cobbler import templates
 from cobbler import utils
 from cobbler import tftpgen
 
@@ -63,7 +63,7 @@ class _InTftpdManager(ManagerModule):
             self.webdir, "distro_mirror", distro.name
         )
         # Create the templar instance.  Used to template the target directory
-        templater = templar.Templar(self.api)
+        templater = templates.Templar(self.api)
 
         # Loop through the dict of boot files, executing a cp for each one
         self.logger.info("processing boot_files for distro: %s", distro.name)

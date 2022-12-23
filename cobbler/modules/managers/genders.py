@@ -8,7 +8,7 @@ import logging
 import sys
 import os
 import time
-from templates.templar import Templar
+from cobbler import templates
 
 plib = distutils.sysconfig.get_python_lib()
 mod_path = f"{plib}/cobbler"
@@ -51,7 +51,7 @@ def write_genders_file(config, profiles_genders, distros_genders, mgmtcls_gender
         "mgmtcls_genders": mgmtcls_genders,
     }
 
-    templar_inst = Templar(config)
+    templar_inst = templates.Templar(config)
     templar_inst.render(template_data, metadata, SETTINGS_FILE)
 
 

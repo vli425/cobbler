@@ -7,7 +7,7 @@ Base class for modules.managers.* classes
 # SPDX-FileCopyrightText: Thomas Renninger <trenn@suse.de>
 
 import logging
-from templates import templar
+from cobbler import templates
 
 
 class ManagerModule:
@@ -41,7 +41,7 @@ class ManagerModule:
         self.systems = self.api.systems()
         self.settings = self.api.settings()
         self.repos = self.api.repos()
-        self.templar = templar.Templar(self.api)
+        self.templar = templates.Templar(self.api)
 
     def write_configs(self):
         """

@@ -14,7 +14,7 @@ import time
 from typing import Optional, List
 
 from cobbler.cexceptions import CX
-from templates import templar
+from cobbler import templates
 from cobbler import tftpgen
 from cobbler import utils
 from cobbler.utils import filesystem_helpers
@@ -45,7 +45,7 @@ class CobblerSync:
         self.images = api.images()
         self.settings = api.settings()
         self.repos = api.repos()
-        self.templar = templar.Templar(self.api)
+        self.templar = templates.Templar(self.api)
         self.tftpgen = tftpgen.TFTPGen(api)
         self.dns = dns
         self.dhcp = dhcp

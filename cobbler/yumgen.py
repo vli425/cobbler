@@ -9,7 +9,7 @@ This is the code behind 'cobbler sync'.
 
 import pathlib
 
-from templates import templar
+from cobbler import templates
 from cobbler import utils
 
 
@@ -26,7 +26,7 @@ class YumGen:
         """
         self.api = api
         self.settings = api.settings()
-        self.templar = templar.Templar(self.api)
+        self.templar = templates.Templar(self.api)
 
     def get_yum_config(self, obj, is_profile: bool) -> str:
         """

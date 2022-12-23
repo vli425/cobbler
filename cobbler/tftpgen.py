@@ -16,7 +16,7 @@ import socket
 from typing import Dict, List, Optional
 
 from cobbler import enums, utils
-from templates import templar
+from cobbler import templates
 from cobbler.cexceptions import CX
 from cobbler.enums import Archs, ImageTypes
 from cobbler.utils import input_converters
@@ -42,7 +42,7 @@ class TFTPGen:
         self.repos = api.repos()
         self.images = api.images()
         self.menus = api.menus()
-        self.templar = templar.Templar(self.api)
+        self.templar = templates.Templar(self.api)
         self.bootloc = self.settings.tftpboot_location
 
     def copy_bootloaders(self, dest):
