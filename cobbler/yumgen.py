@@ -8,9 +8,12 @@ This is the code behind 'cobbler sync'.
 # SPDX-FileCopyrightText: Michael DeHaan <michael.dehaan AT gmail>
 
 import pathlib
+from typing import TYPE_CHECKING
 
-from cobbler import templates
 from cobbler import utils
+
+if TYPE_CHECKING:
+    from cobbler.api import CobblerAPI
 
 
 class YumGen:
@@ -18,7 +21,7 @@ class YumGen:
     TODO
     """
 
-    def __init__(self, api):
+    def __init__(self, api: "CobblerAPI"):
         """
         Constructor
 
@@ -26,7 +29,7 @@ class YumGen:
         """
         self.api = api
         self.settings = api.settings()
-        self.templar = templates.Templar(self.api)
+        self.templar = self.api.templar
 
     def get_yum_config(self, obj, is_profile: bool) -> str:
         """
