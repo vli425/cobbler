@@ -4,13 +4,13 @@ Package that contains built-in templates and rendering logic from Cheetah and Ji
 Cobbler uses Cheetah templates for lots of stuff, but there's some additional magic around that to deal with
 snippets/etc. (And it's not spelled wrong!)
 """
-import importlib
-import inspect
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SPDX-FileCopyrightText: Copyright 2006-2009, Red Hat, Inc and Others
 # SPDX-FileCopyrightText: Michael DeHaan <michael.dehaan AT gmail>
 
+import importlib
+import inspect
 import logging
 import os
 import os.path
