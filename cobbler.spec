@@ -315,13 +315,10 @@ chgrp %{apache_group} %{_sysconfdir}/cobbler/settings.yaml
 %doc docs/developer-guide.rst docs/quickstart-guide.rst docs/installation-guide.rst
 %dir %{_sysconfdir}/cobbler
 %config(noreplace) %{_sysconfdir}/cobbler/auth.conf
-%dir %{_sysconfdir}/cobbler/boot_loader_conf
 %config(noreplace) %{_sysconfdir}/cobbler/cheetah_macros
 %config(noreplace) %{_sysconfdir}/cobbler/import_rsync_whitelist
-%dir %{_sysconfdir}/cobbler/iso
 %config(noreplace) %{_sysconfdir}/cobbler/logging_config.conf
 %config(noreplace) %{_sysconfdir}/cobbler/rsync.exclude
-%config(noreplace) %{_sysconfdir}/cobbler/rsync.template
 %attr(640, root, %{apache_group}) %config(noreplace) %{_sysconfdir}/cobbler/settings.yaml
 %attr(640, root, root) %config(noreplace) %{_sysconfdir}/cobbler/users.conf
 %attr(640, root, root) %config(noreplace) %{_sysconfdir}/cobbler/users.digest
