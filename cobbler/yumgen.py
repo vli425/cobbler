@@ -29,7 +29,6 @@ class YumGen:
         """
         self.api = api
         self.settings = api.settings()
-        self.templar = self.api.templar
 
     def get_yum_config(self, obj, is_profile: bool) -> str:
         """
@@ -77,7 +76,7 @@ class YumGen:
                 continue
 
             outfile = None  # disk output only
-            totalbuf += self.templar.render(infile_data, blended, outfile)
+            totalbuf += self.api.templar.render(infile_data, blended, outfile)
             totalbuf += "\n\n"
 
         return totalbuf

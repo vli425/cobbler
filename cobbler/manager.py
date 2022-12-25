@@ -44,7 +44,6 @@ class ManagerModule:
         self.systems = self.api.systems()
         self.settings = self.api.settings()
         self.repos = self.api.repos()
-        self.templar = self.api.templar
 
     def write_configs(self):
         """
