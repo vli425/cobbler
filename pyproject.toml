@@ -11,3 +11,4 @@ sections="FUTURE,STDLIB,FIRSTPARTY,THIRDPARTY,LOCALFOLDER,COBBLER,TESTS"
 pythonVersion = "3.6"
 typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
+reportImportCycles = "warning"
