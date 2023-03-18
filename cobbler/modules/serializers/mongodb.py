@@ -127,13 +127,13 @@ class MongoDBSerializer(StorageBase):
         cursor = collection.find(projection=projection)
         for result in cursor:
             self._remove_id(result)
-            result["inmemory"] = not lazy_start
-            results.append(result)
-        return results
+            result["inmemory"] = not lazy_start  # type: ignore
+            results.append(result)  # type: ignore
+        return results  # type: ignore
 
     def deserialize(self, collection: "Collection[ITEM]", topological: bool = True):
         datastruct = self.deserialize_raw(collection.collection_type())
-        if topological and isinstance(datastruct, list):
+        if topological and isinstance(datastruct, list):  # type: ignore
             datastruct.sort(key=lambda x: x.get("depth", 1))
         if isinstance(datastruct, dict):
             # This is currently the corner case for the settings type.
@@ -159,13 +159,13 @@ class MongoDBSerializer(StorageBase):
                 f"Item {name} of collection {collection_type} was not found in MongoDB database {self.database_name}!"
             )
         self._remove_id(result)
-        result["inmemory"] = True
-        return result
+        result["inmemory"] = True  # type: ignore
+        return result  # type: ignore
 
     @staticmethod
     def _remove_id(_dict: Mapping[str, Any]):
         if "_id" in _dict:
-            _dict.pop("_id")
+            _dict.pop("_id")  # type: ignore
 
 
 def storage_factory(api: "CobblerAPI") -> MongoDBSerializer:

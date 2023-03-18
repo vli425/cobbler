@@ -21,6 +21,8 @@ try:
         REG_MULTI_SZ,
         REG_SZ,
     )
+
+    HAS_HIVEX = True
 except Exception:
     # This is only defined once in each case.
     HAS_HIVEX = False  # type: ignore
@@ -497,7 +499,7 @@ def run(api: "CobblerAPI", args: Any):
                     utils.subprocess_call(cmd, shell=False)
 
     for profile in profiles:
-        distro: Optional["Distro"] = profile.get_conceptual_parent()
+        distro: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
 
         if distro is None:
             raise ValueError("Distro not found!")
@@ -516,7 +518,7 @@ def run(api: "CobblerAPI", args: Any):
         if not profile or not autoinstall_meta or autoinstall_meta == {}:
             continue
 
-        distro = profile.get_conceptual_parent()
+        distro = profile.get_conceptual_parent()  # type: ignore
 
         if distro and distro.breed == "windows":
             logger.info("System: %s", system.name)

@@ -73,7 +73,7 @@ class StorageBase:
             "The implementation for the configured serializer is missing!"
         )
 
-    def deserialize_item(self, collection_type: str, name: str) -> dict:
+    def deserialize_item(self, collection_type: str, name: str) -> Dict[str, Any]:
         """
         Get a collection item from database and parse it into an object.
 

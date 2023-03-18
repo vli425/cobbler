@@ -411,7 +411,7 @@ class CobblerSync:
         # Cascade sync
         kids = profile.children
         for k in kids:
-            self.add_single_profile(k, rebuild_menu=False)
+            self.add_single_profile(k, rebuild_menu=False)  # type: ignore
         kids = self.api.find_system(return_list=True, **{"profile": profile.name})
         if not isinstance(kids, list):
             raise ValueError("Expected to get list of profiles from search!")

@@ -17,6 +17,7 @@ from cobbler.utils import input_converters
 
 if TYPE_CHECKING:
     from cobbler.api import CobblerAPI
+    from cobbler.items.distro import Distro
 
 
 class Profile(item.Item):
@@ -677,17 +678,17 @@ class Profile(item.Item):
             if parent is None:
                 parent = self.distro
             if parent is not None:
-                parent_boot_loaders = parent.boot_loaders
+                parent_boot_loaders = parent.boot_loaders  # type: ignore
             else:
                 self.logger.warning(
                     'Parent of profile "%s" could not be found for resolving the parent bootloaders.',
                     self.name,
                 )
                 parent_boot_loaders = []
-            if not set(boot_loaders_split).issubset(parent_boot_loaders):
+            if not set(boot_loaders_split).issubset(parent_boot_loaders):  # type: ignore
                 raise CX(
                     f'Error with profile "{self.name}" - not all boot_loaders are supported (given:'
-                    f'"{str(boot_loaders_split)}"; supported: "{str(parent_boot_loaders)}")'
+                    f'"{str(boot_loaders_split)}"; supported: "{str(parent_boot_loaders)}")'  # type: ignore
                 )
             self._boot_loaders = boot_loaders_split
         else:

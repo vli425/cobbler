@@ -321,7 +321,7 @@ class Image(item.Item):
         :param network_count: If None or emtpy will be set to ``1``, otherwise the given integer value will be set.
         :raises TypeError: In case the network_count was not of type int.
         """
-        if network_count is None or network_count == "":
+        if network_count is None or network_count == "":  # type: ignore
             network_count = 1
         if not isinstance(network_count, int):  # type: ignore
             raise TypeError(

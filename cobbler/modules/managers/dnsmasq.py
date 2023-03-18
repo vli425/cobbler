@@ -71,10 +71,10 @@ class _DnsmasqManager(ManagerModule):
             if not system.is_management_supported(cidr_ok=False):
                 continue
 
-            profile: Optional["Profile"] = system.get_conceptual_parent()
+            profile: Optional["Profile"] = system.get_conceptual_parent()  # type: ignore
             if profile is None:
                 raise ValueError("Profile for system not found!")
-            distro: Optional["Distro"] = profile.get_conceptual_parent()
+            distro: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
             if distro is None:
                 raise ValueError("Distro for system not found!")
             for interface in system.interfaces.values():
@@ -151,7 +151,7 @@ class _DnsmasqManager(ManagerModule):
                     if not mac:
                         # can't write this w/o a MAC address
                         continue
-                    if ip_address is not None and ip_address != "":
+                    if ip_address != "":
                         ethers_fh.write(mac.upper() + "\t" + ip_address + "\n")
 
     def regen_hosts(self) -> None:
@@ -172,19 +172,9 @@ class _DnsmasqManager(ManagerModule):
                     ipv6 = interface.ipv6_address
                     if not mac:
                         continue
-                    if (
-                        host is not None
-                        and host != ""
-                        and ipv6 is not None
-                        and ipv6 != ""
-                    ):
+                    if host != "" and ipv6 != "":
                         regen_hosts_fd.write(ipv6 + "\t" + host + "\n")
-                    elif (
-                        host is not None
-                        and host != ""
-                        and ipv4 is not None
-                        and ipv4 != ""
-                    ):
+                    elif host != "" and ipv4 != "":
                         regen_hosts_fd.write(ipv4 + "\t" + host + "\n")
 
     def restart_service(self) -> int:

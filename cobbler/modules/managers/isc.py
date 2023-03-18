@@ -75,10 +75,10 @@ class _IscManager(ManagerModule):
             if not system.is_management_supported(cidr_ok=False):
                 continue
 
-            profile: Optional["Profile"] = system.get_conceptual_parent()
+            profile: Optional["Profile"] = system.get_conceptual_parent()  # type: ignore
             if profile is None:
                 raise ValueError("Profile for System not found!")
-            distro: Optional["Distro"] = profile.get_conceptual_parent()
+            distro: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
 
             # if distro is None then the profile is really an image record
             for (name, system_interface) in list(system.interfaces.items()):
@@ -121,7 +121,7 @@ class _IscManager(ManagerModule):
                     dhcp_tag = system.interfaces[interface["interface_master"]].dhcp_tag
                     host = system.interfaces[interface["interface_master"]].dns_name
 
-                    if ip_address is None or ip_address == "":
+                    if ip_address == "":
                         for (interface_name, interface_object) in list(
                             system.interfaces.items()
                         ):
@@ -129,7 +129,6 @@ class _IscManager(ManagerModule):
                                 interface_name.startswith(
                                     interface["interface_master"] + "."
                                 )
-                                and interface_object.ip_address is not None
                                 and interface_object.ip_address != ""
                             ):
                                 ip_address = interface_object.ip_address
@@ -146,7 +145,7 @@ class _IscManager(ManagerModule):
                 if distro is not None:
                     interface["distro"] = distro.to_dict()
 
-                if mac is None or mac == "":
+                if mac == "":
                     # can't write a DHCP entry for this system
                     continue
 
@@ -261,10 +260,10 @@ class _IscManager(ManagerModule):
             if not system.is_management_supported(cidr_ok=False):
                 continue
 
-            profile: Optional["Profile"] = system.get_conceptual_parent()
+            profile: Optional["Profile"] = system.get_conceptual_parent()  # type: ignore
             if profile is None:
                 raise ValueError("Profile not found!")
-            distro: Optional["Distro"] = profile.get_conceptual_parent()
+            distro: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
             if distro is None:
                 raise ValueError("Distro not found!")
 
@@ -316,7 +315,6 @@ class _IscManager(ManagerModule):
                                 interface_name.startswith(
                                     interface["interface_master"] + "."
                                 )
-                                and interface_object.ipv6_address is not None
                                 and interface_object.ipv6_address != ""
                             ):
                                 ip_v6 = interface_object.ipv6_address
@@ -328,8 +326,7 @@ class _IscManager(ManagerModule):
                     dhcp_tag = interface["dhcp_tag"]
                     host = interface["dns_name"]
 
-                if distro is not None:
-                    interface["distro"] = distro.to_dict()
+                interface["distro"] = distro.to_dict()
 
                 if not mac or not ip_v6:
                     # can't write a DHCP entry for this system
@@ -363,7 +360,7 @@ class _IscManager(ManagerModule):
 
                 # Explicitly declare filename for other (non x86) archs as in DHCP discover package mostly the
                 # architecture cannot be differed due to missing bits...
-                if distro is not None and not interface.get("filename"):
+                if not interface.get("filename"):
                     if distro.arch == Archs.PPC:
                         interface["filename"] = "grub/grub.ppc"
                     elif distro.arch == Archs.PPC64:
@@ -400,8 +397,7 @@ class _IscManager(ManagerModule):
             "dhcp_tags": dhcp_tags,
         }
 
-        if self.logger is not None:
-            self.logger.info("generating %s", self.settings_file_v6)
+        self.logger.info("generating %s", self.settings_file_v6)
         self.templar.render(template_data, metadata, self.settings_file_v6)
 
     def restart_dhcp(self, service_name: str) -> int:

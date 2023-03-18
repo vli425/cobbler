@@ -31,7 +31,7 @@ def add_remaining_kopts(kopts: Dict[str, Union[str, List[str]]]) -> str:
     """
     append_line = [""]  # empty str to ensure the returned str starts with a space
     for option, args in kopts.items():
-        if args is None:
+        if args is None:  # type: ignore
             append_line.append(f"{option}")
             continue
 
