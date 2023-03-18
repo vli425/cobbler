@@ -1,9 +1,20 @@
+"""
+TODO
+"""
+
+from typing import List
+
 import pytest
+from pytest_mock import MockerFixture
 
 from cobbler.actions import hardlink
+from cobbler.api import CobblerAPI
 
 
-def test_object_creation(cobbler_api):
+def test_object_creation(cobbler_api: CobblerAPI):
+    """
+    TODO
+    """
     # Arrange & Act
     result = hardlink.HardLinker(cobbler_api)
 
@@ -15,12 +26,19 @@ def test_object_creation(cobbler_api):
 
 
 def test_constructor_value_error():
+    """
+    TODO
+    """
+    # pylint: disable=no-value-for-parameter
     # Act & Assert
-    with pytest.raises(ValueError):
-        hardlink.HardLinker()
+    with pytest.raises(TypeError):
+        hardlink.HardLinker()  # type: ignore
 
 
-def test_no_hardlink_available(mocker, cobbler_api):
+def test_no_hardlink_available(mocker: MockerFixture, cobbler_api: CobblerAPI):
+    """
+    TODO
+    """
     # Arrange
     mocker.patch("os.path.exists", return_value=False)
     utils_die_mock = mocker.patch("cobbler.utils.die")
@@ -70,7 +88,15 @@ def test_no_hardlink_available(mocker, cobbler_api):
         ),
     ],
 )
-def test_run(mocker, cobbler_api, mock_family, expected_hardlink_cmd):
+def test_run(
+    mocker: MockerFixture,
+    cobbler_api: CobblerAPI,
+    mock_family: str,
+    expected_hardlink_cmd: List[str],
+):
+    """
+    TODO
+    """
     # Arrange
     mocker.patch("cobbler.utils.get_family", return_value=mock_family)
     mock_subprocess_call = mocker.patch("cobbler.utils.subprocess_call", return_value=0)

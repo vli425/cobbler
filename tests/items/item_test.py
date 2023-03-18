@@ -3,6 +3,7 @@ import os
 import pytest
 
 from cobbler import enums
+from cobbler.api import CobblerAPI
 from cobbler.items.distro import Distro
 from cobbler.items.file import File
 from cobbler.items.item import Item
@@ -16,7 +17,7 @@ from cobbler.items.system import System
 from tests.conftest import does_not_raise
 
 
-def test_item_create(cobbler_api):
+def test_item_create(cobbler_api: CobblerAPI):
     # Arrange
 
     # Act
@@ -26,7 +27,7 @@ def test_item_create(cobbler_api):
     assert isinstance(titem, Item)
 
 
-def test_make_clone(cobbler_api):
+def test_make_clone(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -35,7 +36,7 @@ def test_make_clone(cobbler_api):
         titem.make_clone()
 
 
-def test_from_dict(cobbler_api, create_kernel_initrd, fk_kernel, fk_initrd):
+def test_from_dict(cobbler_api: CobblerAPI, create_kernel_initrd, fk_kernel, fk_initrd):
     # Arrange
     folder = create_kernel_initrd(fk_kernel, fk_initrd)
     name = "test_from_dict"
@@ -53,7 +54,7 @@ def test_from_dict(cobbler_api, create_kernel_initrd, fk_kernel, fk_initrd):
     assert titem.initrd == initrd_path
 
 
-def test_uid(cobbler_api):
+def test_uid(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -64,7 +65,7 @@ def test_uid(cobbler_api):
     assert titem.uid == "uid"
 
 
-def test_children(cobbler_api):
+def test_children(cobbler_api: CobblerAPI):
     # Arrange
     titem = Distro(cobbler_api)
 
@@ -74,7 +75,7 @@ def test_children(cobbler_api):
     assert titem.children == []
 
 
-def test_tree_walk(cobbler_api):
+def test_tree_walk(cobbler_api: CobblerAPI):
     # Arrange
     titem = Distro(cobbler_api)
 
@@ -85,7 +86,7 @@ def test_tree_walk(cobbler_api):
     assert result == []
 
 
-def test_item_descendants(cobbler_api):
+def test_item_descendants(cobbler_api: CobblerAPI):
     # Arrange
     titem = Distro(cobbler_api)
 
@@ -97,7 +98,7 @@ def test_item_descendants(cobbler_api):
 
 
 def test_descendants(
-    cobbler_api, create_distro, create_image, create_profile, create_system
+    cobbler_api: CobblerAPI, create_distro, create_image, create_profile, create_system
 ):
     # Arrange
     test_package = Package(cobbler_api)
@@ -198,7 +199,9 @@ def test_descendants(
         assert set(cache_tests[x]) == set(results[x])
 
 
-def test_get_conceptual_parent(request, cobbler_api, create_distro, create_profile):
+def test_get_conceptual_parent(
+    request, cobbler_api: CobblerAPI, create_distro, create_profile
+):
     # Arrange
     tmp_distro = create_distro()
     tmp_profile = create_profile(tmp_distro.name)
@@ -215,7 +218,7 @@ def test_get_conceptual_parent(request, cobbler_api, create_distro, create_profi
     assert result.name == tmp_distro.name
 
 
-def test_name(cobbler_api):
+def test_name(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -226,7 +229,7 @@ def test_name(cobbler_api):
     assert titem.name == "testname"
 
 
-def test_comment(cobbler_api):
+def test_comment(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -247,7 +250,9 @@ def test_comment(cobbler_api):
         (False, pytest.raises(TypeError), None),
     ],
 )
-def test_owners(cobbler_api, input_owners, expected_exception, expected_result):
+def test_owners(
+    cobbler_api: CobblerAPI, input_owners, expected_exception, expected_result
+):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -267,7 +272,7 @@ def test_owners(cobbler_api, input_owners, expected_exception, expected_result):
     ],
 )
 def test_kernel_options(
-    cobbler_api, input_kernel_options, expected_exception, expected_result
+    cobbler_api: CobblerAPI, input_kernel_options, expected_exception, expected_result
 ):
     # Arrange
     titem = Item(cobbler_api)
@@ -288,7 +293,7 @@ def test_kernel_options(
     ],
 )
 def test_kernel_options_post(
-    cobbler_api, input_kernel_options, expected_exception, expected_result
+    cobbler_api: CobblerAPI, input_kernel_options, expected_exception, expected_result
 ):
     # Arrange
     titem = Item(cobbler_api)
@@ -309,7 +314,7 @@ def test_kernel_options_post(
     ],
 )
 def test_autoinstall_meta(
-    cobbler_api, input_autoinstall_meta, expected_exception, expected_result
+    cobbler_api: CobblerAPI, input_autoinstall_meta, expected_exception, expected_result
 ):
     # Arrange
     titem = Item(cobbler_api)
@@ -358,7 +363,7 @@ def test_mgmt_classes(
     ],
 )
 def test_mgmt_parameters(
-    cobbler_api, input_mgmt_parameters, expected_exception, expected_result
+    cobbler_api: CobblerAPI, input_mgmt_parameters, expected_exception, expected_result
 ):
     # Arrange
     titem = Item(cobbler_api)
@@ -371,7 +376,7 @@ def test_mgmt_parameters(
         assert titem.mgmt_parameters == expected_result
 
 
-def test_template_files(cobbler_api):
+def test_template_files(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -382,7 +387,7 @@ def test_template_files(cobbler_api):
     assert titem.template_files == {}
 
 
-def test_boot_files(cobbler_api):
+def test_boot_files(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -393,7 +398,7 @@ def test_boot_files(cobbler_api):
     assert titem.boot_files == {}
 
 
-def test_fetchable_files(cobbler_api):
+def test_fetchable_files(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -404,7 +409,7 @@ def test_fetchable_files(cobbler_api):
     assert titem.fetchable_files == {}
 
 
-def test_sort_key(request, cobbler_api):
+def test_sort_key(request, cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
     titem.name = (
@@ -421,7 +426,7 @@ def test_sort_key(request, cobbler_api):
 
 
 @pytest.mark.skip("Test not yet implemented")
-def test_find_match(cobbler_api):
+def test_find_match(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -433,7 +438,7 @@ def test_find_match(cobbler_api):
 
 
 @pytest.mark.skip("Test not yet implemented")
-def test_find_match_single_key(cobbler_api):
+def test_find_match_single_key(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -444,7 +449,7 @@ def test_find_match_single_key(cobbler_api):
     assert False
 
 
-def test_dump_vars(cobbler_api):
+def test_dump_vars(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -455,7 +460,7 @@ def test_dump_vars(cobbler_api):
     print(result)
     assert "default_ownership" in result
     assert "owners" in result
-    assert len(result) == 153
+    assert len(result) == 154
 
 
 @pytest.mark.parametrize(
@@ -465,7 +470,9 @@ def test_dump_vars(cobbler_api):
         (5, does_not_raise(), 5),
     ],
 )
-def test_depth(cobbler_api, input_depth, expected_exception, expected_result):
+def test_depth(
+    cobbler_api: CobblerAPI, input_depth, expected_exception, expected_result
+):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -501,7 +508,7 @@ def test_ctime(cobbler_api, input_ctime, expected_exception, expected_result):
         ("", pytest.raises(TypeError)),
     ],
 )
-def test_mtime(cobbler_api, value, expected_exception):
+def test_mtime(cobbler_api: CobblerAPI, value, expected_exception):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -513,7 +520,7 @@ def test_mtime(cobbler_api, value, expected_exception):
         assert titem.mtime == value
 
 
-def test_parent(cobbler_api):
+def test_parent(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -524,7 +531,7 @@ def test_parent(cobbler_api):
     assert titem.parent is None
 
 
-def test_check_if_valid(request, cobbler_api):
+def test_check_if_valid(request, cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
     titem.name = (
@@ -538,7 +545,7 @@ def test_check_if_valid(request, cobbler_api):
     assert True  # This test passes if there is no exception raised
 
 
-def test_to_dict(cobbler_api):
+def test_to_dict(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -550,7 +557,7 @@ def test_to_dict(cobbler_api):
     assert result.get("owners") == enums.VALUE_INHERITED
 
 
-def test_to_dict_resolved(cobbler_api):
+def test_to_dict_resolved(cobbler_api: CobblerAPI):
     # Arrange
     titem = Item(cobbler_api)
 
@@ -563,7 +570,7 @@ def test_to_dict_resolved(cobbler_api):
     assert enums.VALUE_INHERITED not in str(result)
 
 
-def test_serialize(cobbler_api):
+def test_serialize(cobbler_api: CobblerAPI):
     # Arrange
     kernel_url = "http://10.0.0.1/custom-kernels-are-awesome"
     titem = Distro(cobbler_api)
@@ -578,7 +585,7 @@ def test_serialize(cobbler_api):
     assert "remote_grub_kernel" not in result
 
 
-def test_grab_tree(cobbler_api):
+def test_grab_tree(cobbler_api: CobblerAPI):
     # Arrange
     object_to_check = Distro(cobbler_api)
     # TODO: Create some objects and give them some inheritance.

@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 import pytest
 
@@ -277,14 +278,6 @@ menus:
             cmd=[object_type, "report", "--name=%s" % attributes["name"]]
         )
 
-        # Cleanup
-        remove_object_via_cli(object_type, attributes["name"])
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
-
         # Assert
         expected = attr_long_name + ":'" + to_change[1] + "'"
         print('Expected: "' + expected + '"')
@@ -385,14 +378,6 @@ menus:
             cmd=[object_type, "find", "--name='%s'" % attributes["name"]]
         )
 
-        # Cleanup
-        remove_object_via_cli(object_type, attributes["name"])
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
-
         # Assert
         lines = outputstd.split("\n")
         assert len(lines) >= 1
@@ -442,11 +427,14 @@ menus:
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
-        fk_initrd,
-        fk_kernel,
-        object_type,
-        attributes,
+        fk_initrd: str,
+        fk_kernel: str,
+        object_type: str,
+        attributes: Dict[str, str],
     ):
+        """
+        TODO
+        """
         # Arrange
         folder = create_kernel_initrd(fk_kernel, fk_initrd)
         kernel_path = os.path.join(folder, fk_kernel)
@@ -483,7 +471,7 @@ menus:
                 "profile", {"name": name_profile_system, "distro": name_distro_system}
             )
         add_object_via_cli(object_type, attributes)
-        new_object_name = "%s-copy" % attributes["name"]
+        new_object_name = f"{attributes['name']}-copy"
 
         # Act
         (outputstd, outputerr) = run_cmd(
@@ -494,15 +482,6 @@ menus:
                 "--newname=%s" % new_object_name,
             ]
         )
-
-        # Cleanup
-        remove_object_via_cli(object_type, attributes["name"])
-        remove_object_via_cli(object_type, new_object_name)
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
 
         # Assert
         assert not outputstd
@@ -605,14 +584,6 @@ menus:
             ]
         )
 
-        # Cleanup
-        remove_object_via_cli(object_type, new_object_name)
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
-
         # Assert
         assert not outputstd
 
@@ -703,14 +674,6 @@ menus:
 
         # Act
         (outputstd, outputerr) = run_cmd(cmd=cmd_list)
-
-        # Cleanup
-        remove_object_via_cli(object_type, attributes["name"])
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
 
         # Assert
         assert not outputstd
@@ -806,13 +769,6 @@ menus:
         (outputstd, outputerr) = run_cmd(
             cmd=[object_type, "remove", "--name=%s" % attributes["name"]]
         )
-
-        # Cleanup
-        if object_type == "profile":
-            remove_object_via_cli("distro", name_distro_profile)
-        elif object_type == "system":
-            remove_object_via_cli("profile", name_profile_system)
-            remove_object_via_cli("distro", name_distro_system)
 
         # Assert
         assert not outputstd

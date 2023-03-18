@@ -1,6 +1,13 @@
+"""
+TODO
+"""
+
+from typing import Callable
+
 import pytest
 
 from cobbler import enums
+from cobbler.api import CobblerAPI
 from cobbler.cexceptions import CX
 from cobbler.items.distro import Distro
 from cobbler.items.profile import Profile
@@ -8,7 +15,7 @@ from cobbler.items.profile import Profile
 from tests.conftest import does_not_raise
 
 
-def test_object_creation(cobbler_api):
+def test_object_creation(cobbler_api: CobblerAPI):
     # Arrange
 
     # Act
@@ -18,7 +25,7 @@ def test_object_creation(cobbler_api):
     assert isinstance(profile, Profile)
 
 
-def test_make_clone(cobbler_api):
+def test_make_clone(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -29,31 +36,26 @@ def test_make_clone(cobbler_api):
     assert result != profile
 
 
-@pytest.fixture(autouse=True)
-def cleanup_to_dict(cobbler_api):
-    yield
-    cobbler_api.remove_distro("test_to_dict_distro")
-
-
-def test_to_dict(cobbler_api, cleanup_to_dict):
+def test_to_dict(
+    create_distro: Callable[[str], Distro],
+    create_profile: Callable[[str, str, str], Profile],
+):
     # Arrange
-    distro = Distro(cobbler_api)
-    distro.name = "test_to_dict_distro"
-    cobbler_api.add_distro(distro, save=False)
-    profile = Profile(cobbler_api)
-    profile.name = "testprofile"
-    profile.distro = distro.name
+    distro: Distro = create_distro()
+    profile: Profile = create_profile(distro_name=distro.name)
 
     # Act
     result = profile.to_dict()
 
     # Assert
-    assert len(result) == 44
-    assert result["distro"] == "test_to_dict_distro"
+    assert len(result) == 45
+    assert result["distro"] == distro.name
     assert result.get("boot_loaders") == enums.VALUE_INHERITED
 
 
-def test_to_dict_resolved(cobbler_api, create_distro):
+def test_to_dict_resolved(
+    cobbler_api: CobblerAPI, create_distro: Callable[[str], Distro]
+):
     # Arrange
     test_distro = create_distro()
     test_distro.kernel_options = {"test": True}
@@ -77,7 +79,7 @@ def test_to_dict_resolved(cobbler_api, create_distro):
 # Properties Tests
 
 
-def test_parent_empty(cobbler_api):
+def test_parent_empty(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -88,7 +90,7 @@ def test_parent_empty(cobbler_api):
     assert profile.parent is None
 
 
-def test_parent_profile(cobbler_api, create_distro, create_profile):
+def test_parent_profile(cobbler_api: CobblerAPI, create_distro, create_profile):
     # Arrange
     test_dist = create_distro()
     test_profile = create_profile(test_dist.name)
@@ -101,7 +103,7 @@ def test_parent_profile(cobbler_api, create_distro, create_profile):
     assert profile.parent is test_profile
 
 
-def test_parent_other_object_type(cobbler_api, create_image):
+def test_parent_other_object_type(cobbler_api: CobblerAPI, create_image):
     # Arrange
     test_image = create_image()
     profile = Profile(cobbler_api)
@@ -111,7 +113,7 @@ def test_parent_other_object_type(cobbler_api, create_image):
         profile.parent = test_image.name
 
 
-def test_parent_invalid_type(cobbler_api):
+def test_parent_invalid_type(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -120,7 +122,7 @@ def test_parent_invalid_type(cobbler_api):
         profile.parent = 0
 
 
-def test_parent_self(cobbler_api):
+def test_parent_self(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
     profile.name = "testname"
@@ -130,7 +132,7 @@ def test_parent_self(cobbler_api):
         profile.parent = profile.name
 
 
-def test_distro(cobbler_api):
+def test_distro(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -141,7 +143,7 @@ def test_distro(cobbler_api):
     assert profile.distro is None
 
 
-def test_name_servers(cobbler_api):
+def test_name_servers(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -152,7 +154,7 @@ def test_name_servers(cobbler_api):
     assert profile.name_servers == []
 
 
-def test_name_servers_search(cobbler_api):
+def test_name_servers_search(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -163,7 +165,7 @@ def test_name_servers_search(cobbler_api):
     assert profile.name_servers_search == ""
 
 
-def test_proxy(cobbler_api):
+def test_proxy(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -175,7 +177,7 @@ def test_proxy(cobbler_api):
 
 
 @pytest.mark.parametrize("value,expected_exception", [(False, does_not_raise())])
-def test_enable_ipxe(cobbler_api, value, expected_exception):
+def test_enable_ipxe(cobbler_api: CobblerAPI, value, expected_exception):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -196,7 +198,7 @@ def test_enable_ipxe(cobbler_api, value, expected_exception):
         (0, does_not_raise()),
     ],
 )
-def test_enable_menu(cobbler_api, value, expected_exception):
+def test_enable_menu(cobbler_api: CobblerAPI, value, expected_exception):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -209,7 +211,7 @@ def test_enable_menu(cobbler_api, value, expected_exception):
         assert profile.enable_menu or not profile.enable_menu
 
 
-def test_dhcp_tag(cobbler_api):
+def test_dhcp_tag(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -228,7 +230,9 @@ def test_dhcp_tag(cobbler_api):
         (False, pytest.raises(TypeError), ""),
     ],
 )
-def test_server(cobbler_api, input_server, expected_exception, expected_result):
+def test_server(
+    cobbler_api: CobblerAPI, input_server, expected_exception, expected_result
+):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -240,7 +244,7 @@ def test_server(cobbler_api, input_server, expected_exception, expected_result):
         assert profile.server == expected_result
 
 
-def test_next_server_v4(cobbler_api):
+def test_next_server_v4(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -251,7 +255,7 @@ def test_next_server_v4(cobbler_api):
     assert profile.next_server_v4 == ""
 
 
-def test_next_server_v6(cobbler_api):
+def test_next_server_v6(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -275,7 +279,7 @@ def test_next_server_v6(cobbler_api):
     ],
 )
 def test_filename(
-    cobbler_api,
+    cobbler_api: CobblerAPI,
     create_distro,
     create_profile,
     input_filename,
@@ -300,7 +304,7 @@ def test_filename(
         assert profile.filename == expected_result
 
 
-def test_autoinstall(cobbler_api):
+def test_autoinstall(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -320,7 +324,9 @@ def test_autoinstall(cobbler_api):
         (True, does_not_raise(), True),
     ],
 )
-def test_virt_auto_boot(cobbler_api, value, expected_exception, expected_result):
+def test_virt_auto_boot(
+    cobbler_api: CobblerAPI, value, expected_exception, expected_result
+):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -343,7 +349,7 @@ def test_virt_auto_boot(cobbler_api, value, expected_exception, expected_result)
         (5, does_not_raise(), 5),
     ],
 )
-def test_virt_cpus(cobbler_api, value, expected_exception, expected_result):
+def test_virt_cpus(cobbler_api: CobblerAPI, value, expected_exception, expected_result):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -366,7 +372,9 @@ def test_virt_cpus(cobbler_api, value, expected_exception, expected_result):
         (5, does_not_raise(), 5.0),
     ],
 )
-def test_virt_file_size(cobbler_api, value, expected_exception, expected_result):
+def test_virt_file_size(
+    cobbler_api: CobblerAPI, value, expected_exception, expected_result
+):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -388,7 +396,9 @@ def test_virt_file_size(cobbler_api, value, expected_exception, expected_result)
         ("", pytest.raises(ValueError), None),
     ],
 )
-def test_virt_disk_driver(cobbler_api, value, expected_exception, expected_result):
+def test_virt_disk_driver(
+    cobbler_api: CobblerAPI, value, expected_exception, expected_result
+):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -409,7 +419,7 @@ def test_virt_disk_driver(cobbler_api, value, expected_exception, expected_resul
         (0.0, pytest.raises(TypeError), 0),
     ],
 )
-def test_virt_ram(cobbler_api, value, expected_exception, expected_result):
+def test_virt_ram(cobbler_api: CobblerAPI, value, expected_exception, expected_result):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -431,7 +441,7 @@ def test_virt_ram(cobbler_api, value, expected_exception, expected_result):
         (False, pytest.raises(TypeError), None),
     ],
 )
-def test_virt_type(cobbler_api, value, expected_exception, expected_result):
+def test_virt_type(cobbler_api: CobblerAPI, value, expected_exception, expected_result):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -452,19 +462,22 @@ def test_virt_type(cobbler_api, value, expected_exception, expected_result):
         (False, pytest.raises(TypeError), None),
     ],
 )
-def test_virt_bridge(cobbler_api, value, expected_exception, expected_result):
+def test_virt_bridge(
+    cobbler_api: CobblerAPI, value, expected_exception, expected_result
+):
     # Arrange
     profile = Profile(cobbler_api)
 
     # Act
-    profile.virt_bridge = ""
+    with expected_exception:
+        profile.virt_bridge = value
 
-    # Assert
-    # This is the default from the settings
-    assert profile.virt_bridge == "xenbr0"
+        # Assert
+        # This is the default from the settings
+        assert profile.virt_bridge == expected_result
 
 
-def test_virt_path(cobbler_api):
+def test_virt_path(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -475,7 +488,7 @@ def test_virt_path(cobbler_api):
     assert profile.virt_path == ""
 
 
-def test_repos(cobbler_api):
+def test_repos(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -486,7 +499,7 @@ def test_repos(cobbler_api):
     assert profile.repos == []
 
 
-def test_redhat_management_key(cobbler_api):
+def test_redhat_management_key(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -497,7 +510,7 @@ def test_redhat_management_key(cobbler_api):
     assert profile.redhat_management_key == ""
 
 
-def test_boot_loaders(cobbler_api):
+def test_boot_loaders(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -508,7 +521,7 @@ def test_boot_loaders(cobbler_api):
     assert profile.boot_loaders == []
 
 
-def test_menu(cobbler_api):
+def test_menu(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 
@@ -519,7 +532,7 @@ def test_menu(cobbler_api):
     assert profile.menu == ""
 
 
-def test_display_name(cobbler_api):
+def test_display_name(cobbler_api: CobblerAPI):
     # Arrange
     profile = Profile(cobbler_api)
 

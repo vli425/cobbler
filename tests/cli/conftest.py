@@ -1,10 +1,25 @@
+"""
+TODO
+"""
+
+from typing import Any, Callable, List, Tuple
+
 import pytest
 
 from cobbler.cli import CobblerCLI
+from cobbler.utils.process_management import service_restart
+
+
+@pytest.fixture(scope="function", autouse=True)
+def restart_daemon():
+    """
+    Restart cobblerd to re-read all collections after the automatic cleanup.
+    """
+    service_restart("cobblerd")
 
 
 @pytest.fixture(scope="function")
-def run_cmd(capsys):
+def run_cmd(capsys: pytest.CaptureFixture[str]) -> Callable[[Any], Tuple[str, str]]:
     """
     Execute the cli command via the cli object.
 
@@ -13,7 +28,7 @@ def run_cmd(capsys):
     :raises Exception: If something has gone wrong.
     """
 
-    def _run_cmd(cmd):
+    def _run_cmd(cmd: List[str]):
         cmd.insert(0, "cli.py")
         cli = CobblerCLI(cmd)
         cli.check_setup()

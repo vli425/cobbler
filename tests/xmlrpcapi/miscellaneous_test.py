@@ -1,3 +1,7 @@
+"""
+Test module to test functions that cannot be grouped into more distinct categories.
+"""
+
 import json
 import os
 import pathlib
@@ -439,6 +443,9 @@ def test_is_autoinstall_in_use(
 
 
 def test_logout(remote: CobblerXMLRPCInterface):
+    """
+    Assert that any action with a token is not successful after using the "logout" method to invalidate the token.
+    """
     # Arrange
     shared_secret = get_shared_secret()
     newtoken = remote.login("", shared_secret)
