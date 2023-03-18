@@ -6,15 +6,23 @@ This module contains the specific code for generating standalone or airgapped IS
 
 import os
 import re
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from cobbler import utils
 from cobbler.actions import buildiso
 
+if TYPE_CHECKING:
+    from cobbler.items.distro import Distro
+    from cobbler.items.profile import Profile
+    from cobbler.items.system import System
+
+
 cdregex = re.compile(r"^\s*url .*\n", re.IGNORECASE | re.MULTILINE)
 
 
-def _generate_append_line_standalone(data: dict, distro, descendant) -> str:
+def _generate_append_line_standalone(
+    data: Dict[Any, Any], distro: "Distro", descendant: Union["Profile", "System"]
+) -> str:
     """
     Generates the append line for the kernel so the installation can be done unattended.
     :param data: The values for the append line. The key "kernel_options" must be present.
@@ -58,7 +66,7 @@ class StandaloneBuildiso(buildiso.BuildIso):
                 "When building a standalone ISO, you must specify a --distro"
             )
         base_distro = self.api.find_distro(name=distro_name)
-        if base_distro is None:
+        if base_distro is None or isinstance(base_distro, list):
             raise ValueError("Distro specified was not found!")
         source = self._validate_standalone_filesource(source, base_distro)
         if not os.path.exists(source):
@@ -69,14 +77,16 @@ class StandaloneBuildiso(buildiso.BuildIso):
             orphan_profiles = [
                 profile
                 for profile in self.profiles
-                if profile not in base_distro.children
+                if profile not in [child.name for child in base_distro.children]
             ]
             if len(orphan_profiles) > 0:
                 raise ValueError(
                     "When building a standalone ISO, all --profiles must be under --distro"
                 )
 
-    def _sync_airgapped_repos(self, airgapped: bool, repo_names_to_copy: dict):
+    def _sync_airgapped_repos(
+        self, airgapped: bool, repo_names_to_copy: Dict[Any, Any]
+    ):
         """
         Syncs all repositories locally available into the image if the is supposed to be airgapped.
         :param airgapped: If false this method is doing nothing.
@@ -102,7 +112,7 @@ class StandaloneBuildiso(buildiso.BuildIso):
                 if not rsync_successful:
                     raise RuntimeError(f'rsync of repo "{repo_name}" failed')
 
-    def _validate_standalone_filesource(self, filesource: str, distro) -> str:
+    def _validate_standalone_filesource(self, filesource: str, distro: "Distro") -> str:
         """
         Validate that the path to the installation sources is making sense. If they do then normalize the path and
         return it.
@@ -114,14 +124,15 @@ class StandaloneBuildiso(buildiso.BuildIso):
         if not filesource:
             # Try to determine the source from the distro kernel path
             self.logger.debug("Trying to locate source for distro")
+            # FIXME: os.path.split returns a maybe empty path
             (source_head, source_tail) = os.path.split(distro.kernel)
             distro_mirror = os.path.join(self.api.settings().webdir, "distro_mirror")
             while source_tail != "":
                 if source_head == distro_mirror:
-                    filesource = os.path.join(source_head, source_tail)
+                    filesource = os.path.join(source_head, source_tail)  # type: ignore
                     self.logger.debug("Found source in %s", filesource)
                     return filesource
-                (source_head, source_tail) = os.path.split(source_head)
+                (source_head, source_tail) = os.path.split(source_head)  # type: ignore
             # Can't find the source, raise an error
             raise ValueError(
                 "Error, no installation source found. When building a standalone or airgapped ISO, you must specify a "
@@ -130,7 +141,12 @@ class StandaloneBuildiso(buildiso.BuildIso):
         return filesource
 
     def _generate_autoinstall_data(
-        self, descendant, distro, airgapped: bool, data: dict, repo_names_to_copy: dict
+        self,
+        descendant: Union["System", "Profile"],
+        distro: "Distro",
+        airgapped: bool,
+        data: Dict[Any, Any],
+        repo_names_to_copy: Dict[Any, Any],
     ) -> str:
         """
         Generates the autoinstall script for the distro/profile/system we want to install.
@@ -162,7 +178,7 @@ class StandaloneBuildiso(buildiso.BuildIso):
                     " {error_message}; cannot build airgapped ISO"
                 )
 
-                if repo_obj is None:
+                if repo_obj is None or isinstance(repo_obj, list):
                     raise ValueError(error.format(error_message="does not exist"))
                 if not repo_obj.mirror_locally:
                     raise ValueError(
@@ -203,14 +219,15 @@ class StandaloneBuildiso(buildiso.BuildIso):
 
     def _generate_descendant(
         self,
-        descendant,
+        descendant: Union["System", "Profile"],
         cfglines: List[str],
-        distro,
+        distro: "Distro",
         airgapped: bool,
-        repo_names_to_copy: dict,
+        repo_names_to_copy: Dict[Any, Any],
     ):
         """
         Generate the ISOLINUX cfg configuration file for the descendant.
+
         :param descendant: The descendant to generate the config file for. Must be a profile or system object.
         :param cfglines: The content of the file which has already been generated.
         :param distro: The parent distro.
@@ -224,10 +241,9 @@ class StandaloneBuildiso(buildiso.BuildIso):
         data = utils.blender(self.api, False, descendant)
 
         # SUSE is not using 'text'. Instead 'textmode' is used as kernel option.
-        if distro is not None:
-            utils.kopts_overwrite(
-                data["kernel_options"], self.api.settings().server, distro.breed
-            )
+        utils.kopts_overwrite(
+            data["kernel_options"], self.api.settings().server, distro.breed
+        )
 
         cfglines.append("")
         cfglines.append(f"LABEL {descendant.name}")
@@ -257,7 +273,7 @@ class StandaloneBuildiso(buildiso.BuildIso):
         # Get the distro object for the requested distro and then get all of its descendants (profiles/sub-profiles/
         # systems) with sort=True for profile/system hierarchy to allow menu indenting
         distro = self.api.find_distro(name=distro_name)
-        if distro is None:
+        if distro is None or isinstance(distro, list):
             raise ValueError(
                 f'Distro "{distro_name}" was not found, aborting generation of ISO-file!'
             )
@@ -271,7 +287,6 @@ class StandaloneBuildiso(buildiso.BuildIso):
         repo_names_to_copy: Dict[str, str] = {}
 
         for descendant in distro.children:
-            descendant = self.api.find_items(what="", name=descendant)
             # if a list of profiles was given, skip any others and their systems
             if len(self.profiles) > 0 and (
                 (
@@ -280,12 +295,12 @@ class StandaloneBuildiso(buildiso.BuildIso):
                 )
                 or (
                     descendant.COLLECTION_TYPE == "system"
-                    and descendant.profile not in self.profiles
+                    and descendant.profile not in self.profiles  # type: ignore
                 )
             ):
                 continue
             self._generate_descendant(
-                descendant, cfglines, distro, airgapped, repo_names_to_copy
+                descendant, cfglines, distro, airgapped, repo_names_to_copy  # type: ignore
             )
 
         cfglines.append("")
@@ -324,7 +339,7 @@ class StandaloneBuildiso(buildiso.BuildIso):
         xorrisofs_opts: str = "",
         distro_name: str = "",
         airgapped: bool = False,
-        source="",
+        source: str = "",
     ):
         """
         Run the whole iso generation from bottom to top. Per default this builds an ISO for all available systems

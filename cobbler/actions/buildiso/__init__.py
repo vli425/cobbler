@@ -11,14 +11,20 @@ import logging
 import os
 import pathlib
 import shutil
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from cobbler import utils
 from cobbler.enums import Archs
 from cobbler.utils import filesystem_helpers, input_converters
 
+if TYPE_CHECKING:
+    from cobbler.api import CobblerAPI
+    from cobbler.cobbler_collections.collection import ITEM, Collection
+    from cobbler.items.distro import Distro
+    from cobbler.items.profile import Profile
 
-def add_remaining_kopts(kopts: dict) -> str:
+
+def add_remaining_kopts(kopts: Dict[str, Union[str, List[str]]]) -> str:
     """Add remaining kernel_options to append_line
     :param kopts: The kernel options which are not present in append_line.
     :return: A single line with all kernel options from the dictionary in the string. Starts with a space.
@@ -46,12 +52,12 @@ class BuildIso:
     Handles conversion of internal state to the isolinux tree layout
     """
 
-    def __init__(self, api):
+    def __init__(self, api: "CobblerAPI") -> None:
         """Constructor which initializes things here. The collection manager pulls all other dependencies in.
         :param api: The API instance which holds all information about objects in Cobbler.
         """
         self.api = api
-        self.distmap = {}
+        self.distmap: Dict[str, str] = {}
         self.distctr = 0
         self.logger = logging.getLogger()
 
@@ -65,8 +71,10 @@ class BuildIso:
             .read_text(encoding="UTF-8")
         )
 
-    def copy_boot_files(self, distro, destdir: str, new_filename: str = ""):
-        """Copy kernel/initrd to destdir with (optional) newfile prefix
+    def copy_boot_files(self, distro: "Distro", destdir: str, new_filename: str = ""):
+        """
+        Copy kernel/initrd to destdir with (optional) newfile prefix
+
         :param distro: Distro object to return the boot files for.
         :param destdir: The destination directory.
         :param new_filename: The file new filename. Kernel and Initrd have different extensions to seperate them from
@@ -83,7 +91,9 @@ class BuildIso:
             shutil.copyfile(kernel, path_destdir.joinpath(f"{new_filename}.krn"))
             shutil.copyfile(initrd, path_destdir.joinpath(f"{new_filename}.img"))
 
-    def filter_profiles(self, selected_items: Optional[List[str]] = None) -> list:
+    def filter_profiles(
+        self, selected_items: Optional[List[str]] = None
+    ) -> List["Profile"]:
         """
         Return a list of valid profile objects selected from all profiles by name, or everything if ``selected_items``
         is empty.
@@ -94,9 +104,12 @@ class BuildIso:
             selected_items = []
         return self.filter_items(self.api.profiles(), selected_items)
 
-    def filter_items(self, all_objs, selected_items: List[str]) -> list:
+    def filter_items(
+        self, all_objs: "Collection[ITEM]", selected_items: List[str]
+    ) -> List["ITEM"]:
         """Return a list of valid profile or system objects selected from all profiles or systems by name, or everything
         if selected_items is empty.
+
         :param all_objs: The collection of items to filter.
         :param selected_items: The list of names
         :raises ValueError: Second option that this error is raised
@@ -105,12 +118,12 @@ class BuildIso:
         """
         # No profiles/systems selection is made, let's return everything.
         if len(selected_items) == 0:
-            return all_objs
+            return list(all_objs)
 
-        filtered_objects = []
+        filtered_objects: List["ITEM"] = []
         for name in selected_items:
             item_object = all_objs.find(name=name)
-            if item_object is not None:
+            if item_object is not None and not isinstance(item_object, list):
                 filtered_objects.append(item_object)
                 selected_items.remove(name)
 
@@ -122,7 +135,7 @@ class BuildIso:
 
         return filtered_objects
 
-    def __copy_files(self, iso_distro, buildisodir: str = ""):
+    def __copy_files(self, iso_distro: "Distro", buildisodir: str = "") -> None:
         """
         This method copies the required and optional files from syslinux into the directories we use for building the
         ISO.
@@ -187,7 +200,7 @@ class BuildIso:
                 "Required file(s) not found. Please check your GRUB 2 installation"
             )
 
-    def calculate_grub_name(self, distro) -> str:
+    def calculate_grub_name(self, distro: "Distro") -> str:
         """
         This function checks the bootloaders_formats in our settings and then checks if there is a match between the
         architectures and the distribution architecture.
@@ -199,7 +212,7 @@ class BuildIso:
 
         for (loader_format, values) in loader_formats.items():
             name = values.get("binary_name", None)
-            if name is not None:
+            if name is not None and isinstance(name, str):
                 grub_binary_names[loader_format.lower()] = name
 
         if desired_arch in (Archs.PPC, Archs.PPC64, Archs.PPC64LE, Archs.PPC64EL):
@@ -240,7 +253,7 @@ class BuildIso:
         :raises TypeError: In case the specified argument is not of type str.
         :return: The validated and normalized directory with appropriate subfolders provisioned.
         """
-        if not isinstance(buildisodir, str):
+        if not isinstance(buildisodir, str):  # type: ignore
             raise TypeError("buildisodir needs to be of type str!")
         if not buildisodir:
             buildisodir = self.api.settings().buildisodir
@@ -272,7 +285,7 @@ class BuildIso:
         self,
         buildisodir: str = "",
         iso_distro: str = "",
-        profiles: Optional[Union[str, list]] = None,
+        profiles: Optional[Union[str, List[Any]]] = None,
     ):
         """
         Validates the directories we use for building the ISO and copies files to the right place.
@@ -283,13 +296,15 @@ class BuildIso:
         :return: The normalized directory for further processing.
         """
         try:
-            iso_distro = self.api.find_distro(name=iso_distro)
+            iso_distro_obj = self.api.find_distro(name=iso_distro)
         except ValueError as value_error:
             raise ValueError(
                 'Not existent distribution name passed to "cobbler buildiso"!'
             ) from value_error
+        if iso_distro_obj is None or isinstance(iso_distro_obj, list):
+            raise ValueError("Ambigous search match or no match at all!")
         buildisodir = self.__prepare_buildisodir(buildisodir)
-        self.__copy_files(iso_distro, buildisodir)
+        self.__copy_files(iso_distro_obj, buildisodir)
         self.profiles = input_converters.input_string_or_list_no_inherit(profiles)
         return buildisodir
 

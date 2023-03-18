@@ -6,11 +6,16 @@ This module contains the specific code to generate a network bootable ISO.
 
 import os
 import re
-from typing import List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from cobbler import utils
 from cobbler.actions import buildiso
 from cobbler.utils import input_converters
+
+if TYPE_CHECKING:
+    from cobbler.items.distro import Distro
+    from cobbler.items.profile import Profile
+    from cobbler.items.system import System
 
 
 class AppendLineBuilder:
@@ -18,21 +23,23 @@ class AppendLineBuilder:
     This class is meant to be initiated for a single append line. Afterwards the object should be disposed.
     """
 
-    def __init__(self, distro_name: str, data: dict):
+    def __init__(self, distro_name: str, data: Dict[str, Any]):
         self.append_line = ""
         self.data = data
         self.distro_name = distro_name
-        self.dist = None
-        self.system_interface = None
+        self.dist: Optional["Distro"] = None
+        self.system_interface: Optional[str] = None
         self.system_ip = None
         self.system_netmask = None
         self.system_gw = None
-        self.system_dns = None
+        self.system_dns: Optional[Union[str, List[str]]] = None
 
-    def _system_int_append_line(self):
+    def _system_int_append_line(self) -> None:
         """
         This generates the interface configuration for the system to boot for the append line.
         """
+        if self.dist is None:
+            return
         if self.system_interface is not None:
             intmac = "mac_address_" + self.system_interface
             if self.dist.breed == "suse":
@@ -50,10 +57,12 @@ class AppendLineBuilder:
             elif self.dist.breed in ["ubuntu", "debian"]:
                 self.append_line += f" netcfg/choose_interface={self.system_interface}"
 
-    def _system_ip_append_line(self):
+    def _system_ip_append_line(self) -> None:
         """
         This generates the IP configuration for the system to boot for the append line.
         """
+        if self.dist is None:
+            return
         if self.system_ip is not None:
             if self.dist.breed == "suse":
                 self.append_line += f" hostip={self.system_ip}"
@@ -62,31 +71,37 @@ class AppendLineBuilder:
             elif self.dist.breed in ["ubuntu", "debian"]:
                 self.append_line += f" netcfg/get_ipaddress={self.system_ip}"
 
-    def _system_mask_append_line(self):
+    def _system_mask_append_line(self) -> None:
         """
         This generates the netmask configuration for the system to boot for the append line.
         """
+        if self.dist is None:
+            return
         if self.system_netmask is not None:
             if self.dist.breed in ["suse", "redhat"]:
                 self.append_line += f" netmask={self.system_netmask}"
             elif self.dist.breed in ["ubuntu", "debian"]:
                 self.append_line += f" netcfg/get_netmask={self.system_netmask}"
 
-    def _system_gw_append_line(self):
+    def _system_gw_append_line(self) -> None:
         """
         This generates the gateway configuration for the system to boot for the append line.
         """
+        if self.dist is None:
+            return
         if self.system_gw is not None:
             if self.dist.breed in ["suse", "redhat"]:
                 self.append_line += f" gateway={self.system_gw}"
             elif self.dist.breed in ["ubuntu", "debian"]:
                 self.append_line += f" netcfg/get_gateway={self.system_gw}"
 
-    def _system_dns_append_line(self, exclude_dns: bool):
+    def _system_dns_append_line(self, exclude_dns: bool) -> None:
         """
         This generates the DNS configuration for the system to boot for the append line.
         :param exclude_dns: If this flag is set to True, the DNS configuration is skipped.
         """
+        if self.dist is None:
+            return
         if not exclude_dns and self.system_dns is not None:
             if self.dist.breed == "suse":
                 nameserver_key = "nameserver"
@@ -104,10 +119,12 @@ class AppendLineBuilder:
             else:
                 self.append_line += f" {nameserver_key}={self.system_dns}"
 
-    def _generate_static_ip_boot_interface(self):
+    def _generate_static_ip_boot_interface(self) -> None:
         """
         The interface to use when the system boots.
         """
+        if self.dist is None:
+            return
         if self.dist.breed == "redhat":
             if self.data["kernel_options"].get("ksdevice", "") != "":
                 self.system_interface = self.data["kernel_options"]["ksdevice"]
@@ -125,10 +142,12 @@ class AppendLineBuilder:
                 ]
                 del self.data["kernel_options"]["netcfg/choose_interface"]
 
-    def _generate_static_ip_boot_ip(self):
+    def _generate_static_ip_boot_ip(self) -> None:
         """
         Generate the IP which is used during the installation process. This respects overrides.
         """
+        if self.dist is None:
+            return
         if self.dist.breed == "redhat":
             if self.data["kernel_options"].get("ip", "") != "":
                 self.system_ip = self.data["kernel_options"]["ip"]
@@ -142,10 +161,12 @@ class AppendLineBuilder:
                 self.system_ip = self.data["kernel_options"]["netcfg/get_ipaddress"]
                 del self.data["kernel_options"]["netcfg/get_ipaddress"]
 
-    def _generate_static_ip_boot_mask(self):
+    def _generate_static_ip_boot_mask(self) -> None:
         """
         Generate the Netmask which is used during the installation process. This respects overrides.
         """
+        if self.dist is None:
+            return
         if self.dist.breed in ["suse", "redhat"]:
             if self.data["kernel_options"].get("netmask", "") != "":
                 self.system_netmask = self.data["kernel_options"]["netmask"]
@@ -155,10 +176,12 @@ class AppendLineBuilder:
                 self.system_netmask = self.data["kernel_options"]["netcfg/get_netmask"]
                 del self.data["kernel_options"]["netcfg/get_netmask"]
 
-    def _generate_static_ip_boot_gateway(self):
+    def _generate_static_ip_boot_gateway(self) -> None:
         """
         Generate the Gateway which is used during the installation process. This respects overrides.
         """
+        if self.dist is None:
+            return
         if self.dist.breed in ["suse", "redhat"]:
             if self.data["kernel_options"].get("gateway", "") != "":
                 self.system_gw = self.data["kernel_options"]["gateway"]
@@ -168,10 +191,12 @@ class AppendLineBuilder:
                 self.system_gw = self.data["kernel_options"]["netcfg/get_gateway"]
                 del self.data["kernel_options"]["netcfg/get_gateway"]
 
-    def _generate_static_ip_boot_dns(self):
+    def _generate_static_ip_boot_dns(self) -> None:
         """
         Generates the static Boot DNS Server which is used for resolving Domains.
         """
+        if self.dist is None:
+            return
         if self.dist.breed == "redhat":
             if self.data["kernel_options"].get("dns", "") != "":
                 self.system_dns = self.data["kernel_options"]["dns"]
@@ -185,7 +210,7 @@ class AppendLineBuilder:
                 self.system_dns = self.data["kernel_options"]["netcfg/get_nameservers"]
                 del self.data["kernel_options"]["netcfg/get_nameservers"]
 
-    def _generate_static_ip_boot_options(self):
+    def _generate_static_ip_boot_options(self) -> None:
         """
         Try to add static ip boot options to avoid DHCP (interface/ip/netmask/gw/dns)
         Check for overrides first and clear them from kernel_options
@@ -196,7 +221,7 @@ class AppendLineBuilder:
         self._generate_static_ip_boot_gateway()
         self._generate_static_ip_boot_dns()
 
-    def _generate_append_redhat(self):
+    def _generate_append_redhat(self) -> None:
         """
         Generate additional content for the append line in case that dist is a RedHat based one.
         """
@@ -204,16 +229,23 @@ class AppendLineBuilder:
             self.append_line += (
                 f" proxy={self.data['proxy']} http_proxy={self.data['proxy']}"
             )
-        if self.dist.os_version in ["rhel4", "rhel5", "rhel6", "fedora16"]:
+        if self.dist and self.dist.os_version in [
+            "rhel4",
+            "rhel5",
+            "rhel6",
+            "fedora16",
+        ]:
             self.append_line += " ks=%s" % self.data["autoinstall"]
         else:
             self.append_line += " inst.ks=%s" % self.data["autoinstall"]
 
-    def _generate_append_debian(self, system):
+    def _generate_append_debian(self, system: "System") -> None:
         """
         Generate additional content for the append line in case that dist is Ubuntu or Debian.
         :param system: The system which the append line should be generated for.
         """
+        if self.dist is None:
+            return
         self.append_line += f" auto-install/enable=true url={self.data['autoinstall']} netcfg/disable_autoconfig=true"
         if self.data.get("proxy", "") != "":
             self.append_line += f" mirror/http/proxy={self.data['proxy']}"
@@ -237,13 +269,15 @@ class AppendLineBuilder:
         # directory
         self.append_line += f" suite={self.dist.os_version}"
 
-    def _generate_append_suse(self, scheme: str = "http"):
+    def _generate_append_suse(self, scheme: str = "http") -> None:
         """
         Special adjustments for generating the append line for suse.
 
         :param scheme: This can be either ``http`` or ``https``.
         :return: The updated append line. If the distribution is not SUSE, then nothing is changed.
         """
+        if self.dist is None:
+            return
         if self.data.get("proxy", "") != "":
             self.append_line += f" proxy={self.data['proxy']}"
         if self.data["kernel_options"].get("install", "") != "":
@@ -260,15 +294,15 @@ class AppendLineBuilder:
         else:
             self.append_line += f" autoyast={self.data['autoinstall']}"
 
-    def _adjust_interface_config(self):
+    def _adjust_interface_config(self) -> None:
         """
         If no kernel_options overrides are present find the management interface do nothing when zero or multiple
         management interfaces are found.
         """
         if self.system_interface is None:
-            mgmt_ints = []
-            mgmt_ints_multi = []
-            slave_ints = []
+            mgmt_ints: List[str] = []
+            mgmt_ints_multi: List[str] = []
+            slave_ints: List[str] = []
             for iname, idata in self.data["interfaces"].items():
                 if idata["management"] and idata["interface_type"] in [
                     "bond",
@@ -314,7 +348,7 @@ class AppendLineBuilder:
                 # Single management interface
                 self.system_interface = mgmt_ints[0]
 
-    def _get_tcp_ip_config(self):
+    def _get_tcp_ip_config(self) -> None:
         """
         Lookup tcp/ip configuration data. If not present already present this adds it from the previously blenderd data.
         """
@@ -334,7 +368,7 @@ class AppendLineBuilder:
                 self.system_dns = self.data["name_servers"]
 
     def generate_system(
-        self, dist, system, exclude_dns: bool, scheme: str = "http"
+        self, dist: "Distro", system: "System", exclude_dns: bool, scheme: str = "http"
     ) -> str:
         """
         Generate the append-line for a net-booting system.
@@ -384,7 +418,9 @@ class AppendLineBuilder:
             if self.data.get("proxy", "") != "":
                 self.append_line += f" proxy={self.data['proxy']}"
             if self.data["kernel_options"].get("install", "") != "":
-                install_options = self.data["kernel_options"]["install"]
+                install_options: Union[str, List[str]] = self.data["kernel_options"][
+                    "install"
+                ]
                 if isinstance(install_options, list):
                     install_options = install_options[0]
                     self.append_line += f" install={install_options}"
@@ -425,7 +461,7 @@ class NetbootBuildiso(buildiso.BuildIso):
     This class contains all functionality related to building network installation images.
     """
 
-    def filter_systems(self, selected_items: Optional[List[str]] = None) -> list:
+    def filter_systems(self, selected_items: Optional[List[str]] = None) -> List[Any]:
         """
         Return a list of valid system objects selected from all systems by name, or everything if ``selected_items`` is
         empty.
@@ -436,10 +472,11 @@ class NetbootBuildiso(buildiso.BuildIso):
             selected_items = []
         found_systems = self.filter_items(self.api.systems(), selected_items)
         # Now filter all systems out that are image based as we don't know about their kernel and initrds
-        return_systems = []
+        return_systems: List["System"] = []
         for system in found_systems:
             # All systems not underneath a profile should be skipped
-            if system.get_conceptual_parent().TYPE_NAME == "profile":
+            parent_obj = system.get_conceptual_parent()
+            if parent_obj is not None and parent_obj.TYPE_NAME == "profile":
                 return_systems.append(system)
         # Now finally return
         return return_systems
@@ -458,7 +495,9 @@ class NetbootBuildiso(buildiso.BuildIso):
         self.distmap[distname] = str(self.distctr)
         return str(self.distctr)
 
-    def _generate_netboot_system(self, system, cfglines: List[str], exclude_dns: bool):
+    def _generate_netboot_system(
+        self, system: "System", cfglines: List[str], exclude_dns: bool
+    ):
         """
         Generates the ISOLINUX cfg configuration for any systems included in the image.
         :param system: The system which the configuration should be generated for.
@@ -466,8 +505,12 @@ class NetbootBuildiso(buildiso.BuildIso):
         :param exclude_dns: If DNS configuration should be excluded or not.
         """
         self.logger.info("processing system: %s", system.name)
-        profile = system.get_conceptual_parent()
-        dist = profile.get_conceptual_parent()
+        profile: Optional["Profile"] = system.get_conceptual_parent()  # type: ignore
+        if profile is None:
+            raise ValueError("Profile not found!")
+        dist: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
+        if dist is None:
+            raise ValueError("Profile not found!")
         distname = self.make_shorter(dist.name)
         self.copy_boot_files(dist, self.isolinuxdir, distname)
 
@@ -490,14 +533,16 @@ class NetbootBuildiso(buildiso.BuildIso):
         )
         cfglines.append(append_line)
 
-    def _generate_netboot_profile(self, profile, cfglines: List[str]):
+    def _generate_netboot_profile(self, profile: "Profile", cfglines: List[str]):
         """
         Generates the ISOLINUX cfg configuration for any profiles included in the image.
         :param profile: The profile which the configuration should be generated for.
         :param cfglines: The already existing lines of the configuration.
         """
         self.logger.info('Processing profile: "%s"', profile.name)
-        dist = profile.get_conceptual_parent()
+        dist: Optional["Distro"] = profile.get_conceptual_parent()  # type: ignore
+        if dist is None:
+            raise ValueError("distro for profile not found!")
         distname = self.make_shorter(dist.name)
         self.copy_boot_files(dist, self.isolinuxdir, distname)
 
@@ -509,10 +554,9 @@ class NetbootBuildiso(buildiso.BuildIso):
         data = utils.blender(self.api, False, profile)
 
         # SUSE is not using 'text'. Instead 'textmode' is used as kernel option.
-        if dist is not None:
-            utils.kopts_overwrite(
-                data["kernel_options"], self.api.settings().server, dist.breed
-            )
+        utils.kopts_overwrite(
+            data["kernel_options"], self.api.settings().server, dist.breed
+        )
 
         if not re.match(r"[a-z]+://.*", data["autoinstall"]):
             autoinstall_scheme = self.api.settings().autoinstall_scheme
@@ -530,6 +574,7 @@ class NetbootBuildiso(buildiso.BuildIso):
     ):
         """
         Creates the ``isolinux.cfg`` for a network bootable ISO image.
+
         :param systems: The filter to generate a netboot iso for. You may specify multiple systems on the CLI space
                         separated.
         :param exclude_dns: If this is True then the dns server is skipped. False will set it.
@@ -564,8 +609,10 @@ class NetbootBuildiso(buildiso.BuildIso):
         """
         Run the whole iso generation from bottom to top. Per default this builds an ISO for all available systems
         and profiles.
+
         This is the only method which should be called from non-class members. The ``profiles`` and ``system``
         parameters can be combined.
+
         :param iso: The name of the iso. Defaults to "autoinst.iso".
         :param buildisodir: This overwrites the directory from the settings in which the iso is built in.
         :param profiles: The filter to generate the ISO only for selected profiles.

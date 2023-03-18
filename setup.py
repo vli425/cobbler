@@ -631,8 +631,8 @@ if __name__ == "__main__":
                 "pytest>6",
                 "pytest-cov",
                 "coverage",
-                "pytest-mock",
-                "pytest-benchmark"
+                "pytest-mock>3.3.0",
+                "pytest-benchmark",
             ],
             "docs": ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-apidoc"],
         },
