@@ -626,6 +626,7 @@ if __name__ == "__main__":
                 "types-PyYAML",
                 "types-psutil",
                 "types-netaddr",
+                "isort",
             ],
             "test": [
                 "pytest>6",
