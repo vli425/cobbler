@@ -111,8 +111,8 @@ def create_distro(
     fk_initrd: str,
 ):
     """
-    Returns a function which has the distro name as an argument. The function returns a distro object. The distro is already added to
-    the CobblerAPI.
+    Returns a function which has the distro name as an argument. The function returns a distro object. The distro is
+    already added to the CobblerAPI.
     """
 
     def _create_distro(name: str = "") -> Distro:

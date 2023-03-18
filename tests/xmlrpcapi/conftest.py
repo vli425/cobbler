@@ -73,7 +73,7 @@ def snippet_add(
 
 
 @pytest.fixture(scope="function")
-def snippet_remove(remote: CobblerXMLRPCInterface, token: str):
+def snippet_remove(remote: CobblerXMLRPCInterface, token: str) -> Callable[[str], None]:
     """
     Fixture that removed a snippet from Cobbler.
     """
@@ -249,7 +249,9 @@ def remove_mgmt_class(remote: CobblerXMLRPCInterface, token: str):
 
 
 @pytest.fixture(scope="function")
-def create_autoinstall_template(remote: CobblerXMLRPCInterface, token: str):
+def create_autoinstall_template(
+    remote: CobblerXMLRPCInterface, token: str
+) -> Callable[[str, str], None]:
     """
     Fixture that creates an autoinstall template and adds it to Cobbler.
     """
@@ -261,7 +263,9 @@ def create_autoinstall_template(remote: CobblerXMLRPCInterface, token: str):
 
 
 @pytest.fixture(scope="function")
-def remove_autoinstall_template(remote: CobblerXMLRPCInterface, token: str):
+def remove_autoinstall_template(
+    remote: CobblerXMLRPCInterface, token: str
+) -> Callable[[str], None]:
     """
     TOFixture that removes an autoinstall template from Cobbler.DO
     """
@@ -273,7 +277,9 @@ def remove_autoinstall_template(remote: CobblerXMLRPCInterface, token: str):
 
 
 @pytest.fixture(scope="function")
-def create_repo(remote: CobblerXMLRPCInterface, token: str):
+def create_repo(
+    remote: CobblerXMLRPCInterface, token: str
+) -> Callable[[str, str, bool], str]:
     """
     Fixture that creates a repository and adds it to Cobbler.
     """

@@ -1,5 +1,9 @@
+"""
+TODO
+"""
+
 import os
-from typing import Dict
+from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
 
@@ -28,9 +32,13 @@ def teardown():
 
 
 @pytest.fixture(scope="function")
-def generate_run_cmd_array():
-    def _generate_run_cmd_array(dict_to_convert):
-        result_array = []
+def generate_run_cmd_array() -> Callable[[Dict[str, str]], List[str]]:
+    """
+    TODO
+    """
+
+    def _generate_run_cmd_array(dict_to_convert: Dict[str, str]) -> List[str]:
+        result_array: List[str] = []
         for key in dict_to_convert:
             result_array.append("--%s=%s" % (key, dict_to_convert[key]))
         return result_array
@@ -39,20 +47,31 @@ def generate_run_cmd_array():
 
 
 @pytest.fixture(scope="function")
-def add_object_via_cli(run_cmd, generate_run_cmd_array):
-    def _add_object_via_cli(object_type, attributes):
+def add_object_via_cli(
+    run_cmd: Callable[[Any], Tuple[str, str]],
+    generate_run_cmd_array: Callable[[Dict[str, str]], List[str]],
+):
+    """
+    TODO
+    """
+
+    def _add_object_via_cli(object_type: str, attributes: Dict[str, str]):
         cmd_list = [object_type, "add"]
         options = generate_run_cmd_array(attributes)
         cmd_list.extend(options)
-        run_cmd(cmd=cmd_list)
+        run_cmd(cmd=cmd_list)  # type: ignore
 
     return _add_object_via_cli
 
 
 @pytest.fixture(scope="function")
-def remove_object_via_cli(run_cmd):
-    def _remove_object_via_cli(object_type, name):
-        run_cmd(cmd=[object_type, "remove", "--name=%s" % name])
+def remove_object_via_cli(run_cmd: Callable[[Any], Tuple[str, str]]):
+    """
+    TODO
+    """
+
+    def _remove_object_via_cli(object_type: str, name: str):
+        run_cmd(cmd=[object_type, "remove", f"--name={name}"])  # type: ignore
 
     return _remove_object_via_cli
 
@@ -63,7 +82,7 @@ class TestCobblerCliTestObject:
     Test CLI commands on objects
     """
 
-    def test_report(self, run_cmd):
+    def test_report(self, run_cmd: Callable[[Any], Tuple[str, str]]):
         # Arrange
         expected = """distros:
 ==========
@@ -113,7 +132,12 @@ menus:
             "menu",
         ],
     )
-    def test_report_with_type(self, run_cmd, object_type):
+    def test_report_with_type(
+        self, run_cmd: Callable[[Any], Tuple[str, str]], object_type: str
+    ):
+        """
+        TODO
+        """
         # Arrange
 
         # Act
@@ -136,7 +160,9 @@ menus:
             "menu",
         ],
     )
-    def test_report_with_type_and_name(self, run_cmd, object_type):
+    def test_report_with_type_and_name(
+        self, run_cmd: Callable[[Any], Tuple[str, str]], object_type: str
+    ):
         # Arrange
         name = "notexisting"
 
@@ -217,17 +243,20 @@ menus:
     )
     def test_edit(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
-        fk_kernel,
-        fk_initrd,
-        object_type,
-        attributes,
-        to_change,
-        attr_long_name,
+        fk_kernel: str,
+        fk_initrd: str,
+        object_type: str,
+        attributes: Dict[str, str],
+        to_change: List[str],
+        attr_long_name: str,
     ):
+        """
+        TODO
+        """
         # Arrange
         folder = create_kernel_initrd(fk_kernel, fk_initrd)
         kernel_path = os.path.join(folder, fk_kernel)
@@ -325,7 +354,7 @@ menus:
     )
     def test_find(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
@@ -423,7 +452,7 @@ menus:
     )
     def test_copy(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
@@ -527,7 +556,7 @@ menus:
     )
     def test_rename(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
@@ -622,7 +651,7 @@ menus:
     )
     def test_add(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         remove_object_via_cli,
         generate_run_cmd_array,
         create_kernel_initrd,
@@ -719,14 +748,14 @@ menus:
     )
     def test_remove(
         self,
-        run_cmd,
+        run_cmd: Callable[[Any], Tuple[str, str]],
         add_object_via_cli,
         remove_object_via_cli,
         create_kernel_initrd,
-        fk_initrd,
-        fk_kernel,
-        object_type,
-        attributes,
+        fk_initrd: str,
+        fk_kernel: str,
+        object_type: str,
+        attributes: Dict[str, str],
     ):
         # Arrange
         folder = create_kernel_initrd(fk_kernel, fk_initrd)

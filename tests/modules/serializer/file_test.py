@@ -344,13 +344,16 @@ def test_deserialize(
     ],
 )
 def test_deserialize_item(
-    mocker,
-    input_collection_type,
-    input_item,
-    expected_result,
+    mocker: MockerFixture,
+    input_collection_type: str,
+    input_item: Dict[str, str],
+    expected_result: Dict[str, Union[str, bool]],
     expected_exception,
-    serializer_obj,
+    serializer_obj: file.FileSerializer,
 ):
+    """
+    TODO
+    """
     # Arrange
     mocked_input = mocker.mock_open(read_data=json.dumps(input_item))()
     mocker.patch("builtins.open", return_value=mocked_input)
