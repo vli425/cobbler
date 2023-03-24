@@ -14,8 +14,8 @@ import sys
 import time
 from configparser import ConfigParser
 from distutils.command.build import build as _build
+from typing import Any, Dict, List
 
-from coverage import Coverage
 from setuptools import Command
 from setuptools import Distribution as _Distribution
 from setuptools import dep_util, find_packages, setup
