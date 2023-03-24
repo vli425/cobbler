@@ -20,7 +20,6 @@ from cobbler.utils import filesystem_helpers
 if TYPE_CHECKING:
     from cobbler.api import CobblerAPI
     from cobbler.items.profile import Profile
-    from cobbler.items.system import System
     from cobbler.manager import ManagerModule
 
 
