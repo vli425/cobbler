@@ -6,10 +6,10 @@ This module contains the code for the abstract base collection that powers all t
 # SPDX-FileCopyrightText: Copyright 2006-2009, Red Hat, Inc and Others
 # SPDX-FileCopyrightText: Michael DeHaan <michael.dehaan AT gmail>
 
-from abc import abstractmethod
 import logging
 import os
 import time
+from abc import abstractmethod
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
@@ -23,7 +23,7 @@ from typing import (
     Union,
 )
 
-from cobbler import utils
+from cobbler import enums, utils
 from cobbler.cexceptions import CX
 from cobbler.items import distro, file, image
 from cobbler.items import item as item_base

@@ -7,7 +7,7 @@ An Resource is a serializable thing that can appear in a Collection
 # SPDX-FileCopyrightText: Kelsey Hightower <kelsey.hightower@gmail.com>
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from cobbler import enums
 from cobbler.decorator import LazyProperty

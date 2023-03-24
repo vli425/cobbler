@@ -7,7 +7,7 @@ Cobbler module that contains the code for a Cobbler profile object.
 # SPDX-FileCopyrightText: Michael DeHaan <michael.dehaan AT gmail>
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from cobbler import autoinstall_manager, enums, validate
 from cobbler.cexceptions import CX
