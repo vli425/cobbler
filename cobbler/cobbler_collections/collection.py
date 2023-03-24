@@ -6,6 +6,7 @@ This module contains the code for the abstract base collection that powers all t
 # SPDX-FileCopyrightText: Copyright 2006-2009, Red Hat, Inc and Others
 # SPDX-FileCopyrightText: Michael DeHaan <michael.dehaan AT gmail>
 
+from abc import abstractmethod
 import logging
 import os
 import time

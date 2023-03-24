@@ -7,7 +7,7 @@ Cobbler module that contains the code for a Cobbler file object.
 # SPDX-FileCopyrightText: Kelsey Hightower <kelsey.hightower@gmail.com>
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from cobbler.cexceptions import CX
 from cobbler.decorator import LazyProperty
