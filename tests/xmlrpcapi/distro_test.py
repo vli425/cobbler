@@ -1,13 +1,12 @@
 import os
 from typing import Any, Callable
 
-from build.lib.cobbler.remote import CobblerXMLRPCInterface
-
 import pytest
 
 from cobbler import enums
 from cobbler.api import CobblerAPI
 from cobbler.cexceptions import CX
+from cobbler.remote import CobblerXMLRPCInterface
 
 
 @pytest.fixture(autouse=True)
